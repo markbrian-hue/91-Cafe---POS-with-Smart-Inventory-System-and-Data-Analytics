@@ -1,0 +1,142 @@
+﻿@model POS_91Cafe.ViewModels.ReportsViewModel
+@{
+    ViewData["Title"] = "Reports Center";
+    Func<decimal, string> money = amount => "₱" + amount.ToString("N2");
+}
+
+
+<div class="container-fluid py-4">
+
+    <!-- Header (Hidden on Print) -->
+    <div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+        <div>
+            <h2 class="fw-bold" style="color: var(--brand-dark);">Reports Center</h2>
+            <p class="text-muted mb-0">Financial performance for <strong class="text-primary">@Model.StartDate.ToString("MMM dd") - @Model.EndDate.ToString("MMM dd")</strong></p>
+        </div>
+        <div class="btn-group bg-white shadow-sm p-1 rounded-3">
+            <a href="#" class="btn btn-primary shadow-sm rounded-2 px-4">Sales Report</a>
+            <a asp-action="Inventory" class="btn btn-light border-0 rounded-2 px-4 text-muted">Inventory Status</a>
+        </div>
+    </div>
+
+    <!-- Filter Toolbar (Hidden on Print) -->
+    <div class="card border-0 shadow-sm mb-4 d-print-none" style="border-radius: 16px;">
+        <div class="card-body p-3">
+            <form method="get" class="row g-2 align-items-center">
+                <div class="col-auto">
+                    <label class="fw-bold text-muted small me-2">PRESET:</label>
+                </div>
+                <div class="col-auto">
+                    <select name="preset" class="form-select border-0 bg-light fw-bold" onchange="this.form.submit()" style="border-radius: 10px;">
+                        <!option value="Today" @(Model.DatePreset == "Today" ? "selected" : "")>Today</!option>
+                        <!option value="Yesterday" @(Model.DatePreset == "Yesterday" ? "selected" : "")>Yesterday</!option>
+                        <!option value="This Week" @(Model.DatePreset == "This Week" ? "selected" : "")>This Week</!option>
+                        <!option value="This Month" @(Model.DatePreset == "This Month" ? "selected" : "")>This Month</!option>
+                        <!option value="Last Month" @(Model.DatePreset == "Last Month" ? "selected" : "")>Last Month</!option>
+                        <!option value="This Year" @(Model.DatePreset == "This Year" ? "selected" : "")>This Year</!option>
+                    </select>
+                </div>
+                <div class="col text-end">
+                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" onclick="window.print()">
+                        <i class="fas fa-print me-1"></i> Print Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats Cards (Hidden on Print via CSS) -->
+    <div class="row g-4 mb-5 d-print-none">
+        <!-- Revenue -->
+        <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 16px; border-left: 5px solid #4F3422 !important;">
+                <div class="card-body">
+                    <small class="text-muted fw-bold text-uppercase">Total Revenue</small>
+                    <h2 class="fw-bold text-dark mt-2 mb-0">@money(Model.TotalRevenue)</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profit -->
+        <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 16px; border-left: 5px solid #28a745 !important;">
+                <div class="card-body">
+                    <small class="text-muted fw-bold text-uppercase">Net Profit</small>
+                    <h2 class="fw-bold text-success mt-2 mb-0">@money(Model.TotalProfit)</h2>
+                    <small class="text-muted" style="font-size: 0.8rem;">
+                        (Margin: @(Model.TotalRevenue > 0 ? ((Model.TotalProfit / Model.TotalRevenue) * 100).ToString("F0") : "0")%)
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions -->
+        <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 16px; border-left: 5px solid #6c757d !important;">
+                <div class="card-body">
+                    <small class="text-muted fw-bold text-uppercase">Transactions</small>
+                    <h2 class="fw-bold text-secondary mt-2 mb-0">@Model.TransactionCount</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Avg Sale -->
+        <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 16px; border-left: 5px solid #ffc107 !important;">
+                <div class="card-body">
+                    <small class="text-muted fw-bold text-uppercase">Avg. Ticket</small>
+                    <h2 class="fw-bold text-dark mt-2 mb-0">@money(Model.AverageTicket)</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Table (Target for Printing) -->
+    <div id="transaction-table-card" class="card border-0 shadow-sm" style="border-radius: 16px; overflow: hidden;">
+        <div class="card-header bg-white py-3 px-4 border-0">
+            <h5 class="mb-0 fw-bold" style="color: var(--brand-dark);">Transaction History</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="bg-light text-secondary small text-uppercase">
+                    <tr>
+                        <th class="px-4 py-3 border-0">Date</th>
+                        <th class="border-0">Sale ID</th>
+                        <th class="border-0">Payment</th>
+                        <th class="border-0 text-center">Items</th>
+                        <th class="px-4 py-3 border-0 text-end">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.RecentSales.Any())
+                    {
+                        foreach (var sale in Model.RecentSales)
+                        {
+                            // Convert UTC to Local for Display
+                            var localDate = sale.Date.ToLocalTime();
+                            <tr>
+                                <td class="px-4 text-muted fw-bold" style="font-size: 0.9rem;">
+                                    @localDate.ToString("MMM dd, yyyy hh:mm tt")
+                                </td>
+                                <td class="text-primary fw-bold">#@sale.SaleID</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">@sale.PaymentMethod</span>
+                                </td>
+                                <td class="text-center text-muted">@sale.ItemCount</td>
+                                <td class="px-4 text-end fw-bold text-dark">@money(sale.Total)</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <p>No transactions found for this period.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

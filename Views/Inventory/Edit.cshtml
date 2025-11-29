@@ -1,0 +1,86 @@
+﻿@model POS_91Cafe.Models.Product
+
+@{
+    ViewData["Title"] = "Edit Product";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+                <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+                    <h4 class="fw-bold text-dark">Edit Product</h4>
+                    <p class="text-muted small">Update details for <strong class="text-primary">@Model.Name</strong></p>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Edit">
+                        <input type="hidden" asp-for="ProductID" />
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <!-- Name -->
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-bold text-muted small">PRODUCT NAME</label>
+                            <input asp-for="Name" class="form-control form-control-lg" style="border-radius: 10px;" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+
+                        <!-- Category -->
+                        <div class="mb-3">
+                            <label asp-for="CategoryID" class="form-label fw-bold text-muted small">CATEGORY</label>
+                            <select asp-for="CategoryID" class="form-select form-select-lg" asp-items="ViewBag.CategoryID" style="border-radius: 10px;"></select>
+                            <span asp-validation-for="CategoryID" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <!-- Selling Price -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="SellingPrice" class="form-label fw-bold text-muted small">SELLING PRICE (₱)</label>
+                                <input asp-for="SellingPrice" type="number" step="0.01" class="form-control form-control-lg" style="border-radius: 10px;" />
+                                <span asp-validation-for="SellingPrice" class="text-danger"></span>
+                            </div>
+
+                            <!-- Unit -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Unit" class="form-label fw-bold text-muted small">UNIT / VARIATION</label>
+                                <input asp-for="Unit" class="form-control form-control-lg" style="border-radius: 10px;" />
+                                <span asp-validation-for="Unit" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <!-- Cost Price (READ ONLY) -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted small">COST PRICE (₱)</label>
+                            <div class="input-group">
+                                <input asp-for="CostPrice" class="form-control form-control-lg bg-light text-muted" readonly style="border-radius: 10px 0 0 10px;" />
+                                <a href="/Recipes/Manage/@Model.ProductID" class="btn btn-outline-secondary d-flex align-items-center" style="border-radius: 0 10px 10px 0;">
+                                    <i class="fas fa-calculator me-2"></i> Adjust via Recipe
+                                </a>
+                            </div>
+                            <div class="form-text text-muted small mt-1">
+                                <i class="fas fa-lock me-1"></i> Cost is automatically calculated based on ingredients.
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <button type="button" class="btn btn-outline-danger border-0" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                <i class="fas fa-trash-alt me-2"></i>Delete
+                            </button>
+
+                            <div class="d-flex gap-2">
+                                <a asp-action="Index" class="btn btn-light border px-4" style="border-radius: 10px;">Cancel</a>
+                                <button type="submit" class="btn btn-primary px-5" style="background-color: var(--brand-primary); border: none; border-radius: 10px;">Save Changes</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

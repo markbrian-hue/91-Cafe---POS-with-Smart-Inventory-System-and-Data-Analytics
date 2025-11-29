@@ -1,0 +1,399 @@
+﻿@model POS_91Cafe.ViewModels.AnalyticsViewModel
+@{
+    ViewData["Title"] = "Analytics Dashboard";
+
+    // Get current period from Query String (defaults to "month" if empty)
+    var currentPeriod = Context.Request.Query["period"].ToString();
+    if (string.IsNullOrEmpty(currentPeriod)) currentPeriod = "month";
+
+    // Determine the Label
+    string periodLabel;
+    if (DateTime.TryParse(currentPeriod, out DateTime specificDate))
+    {
+        periodLabel = specificDate.ToString("MMM dd, yyyy"); // e.g. "Oct 25, 2023"
+    }
+    else
+    {
+        periodLabel = currentPeriod.ToLower() switch
+        {
+            "today" => "Today",
+            "yesterday" => "Yesterday",
+            "week" => "Last 7 Days",
+            "month" => "Last 30 Days",
+            _ => "Last 30 Days"
+        };
+    }
+}
+
+<div class="sh-container">
+
+    <!-- 1. Header Area -->
+    <div class="sh-header">
+        <div>
+            <h1 class="sh-title">Overview</h1>
+            <p class="text-muted mb-0" style="font-size: 0.9rem;">
+                <span class="badge bg-light text-dark border me-1">Showing: @periodLabel</span>
+                Real-time performance and AI forecasting.
+            </p>
+        </div>
+        <div class="sh-controls">
+
+            <!-- Hidden Date Input -->
+            <input type="date" id="customDatePicker" style="visibility: hidden; position: absolute; width: 0;" onchange="changePeriod(this.value)">
+
+            <!-- Date Filter Dropdown -->
+            <div class="dropdown">
+                <button class="sh-btn-secondary dropdown-toggle" type="button" id="dateFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="far fa-calendar-alt"></i> @periodLabel
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="dateFilterDropdown">
+                    <li><button class="dropdown-item @(currentPeriod == "today" ? "active" : "")" onclick="changePeriod('today')">Today</button></li>
+                    <li><button class="dropdown-item @(currentPeriod == "yesterday" ? "active" : "")" onclick="changePeriod('yesterday')">Yesterday</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button class="dropdown-item @(currentPeriod == "week" ? "active" : "")" onclick="changePeriod('week')">Last 7 Days</button></li>
+                    <li><button class="dropdown-item @(currentPeriod == "month" ? "active" : "")" onclick="changePeriod('month')">Last 30 Days</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <!-- Trigger the hidden date input -->
+                    <li><button class="dropdown-item fw-bold text-primary" onclick="document.getElementById('customDatePicker').showPicker()">Choose Date...</button></li>
+                </ul>
+            </div>
+
+            <!-- Export Button -->
+            <button class="sh-btn-secondary" onclick="exportDashboard()">
+                <i class="fas fa-download"></i> Export
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. Primary KPI Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="sh-card">
+                <div class="sh-metric-label">
+                    TOTAL SALES
+                    <i class="fas fa-ellipsis-h sh-icon-subtle"></i>
+                </div>
+                <div class="sh-metric-value">
+                    @Model.TodaysSales.ToString("C0", new System.Globalization.CultureInfo("en-PH"))
+                </div>
+                <div class="sh-metric-footer">
+                    <span class="text-dark fw-bold">@Model.TodaysTransactions</span>
+                    <span> transactions</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="sh-card">
+                <div class="sh-metric-label">
+                    AVG. ORDER VALUE
+                    <i class="fas fa-ellipsis-h sh-icon-subtle"></i>
+                </div>
+                <div class="sh-metric-value">
+                    @Model.AverageTransactionValue.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+                </div>
+                <div class="sh-metric-footer">
+                    <span>per customer avg.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="sh-card">
+                <div class="sh-metric-label">
+                    TOP PRODUCT
+                    <i class="fas fa-crown sh-icon-subtle text-warning"></i>
+                </div>
+                <div class="sh-metric-value fs-4 text-truncate" title="@Model.TopProduct">
+                    @Model.TopProduct
+                </div>
+                <div class="sh-metric-footer">
+                    <span class="text-success fw-bold">@Model.TopProductUnits</span>
+                    <span> units sold</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="sh-card" style="background: linear-gradient(145deg, #4F3422, #3E2723); border: none;">
+                <div class="sh-metric-label text-white-50">
+                    FORECAST (NEXT 7 DAYS)
+                    <i class="fas fa-magic text-white-50"></i>
+                </div>
+                <div class="sh-metric-value text-white">
+                    @Model.NextSevenDayForecast.ToString("C0", new System.Globalization.CultureInfo("en-PH"))
+                </div>
+                <div class="sh-metric-footer text-white-50">
+                    <i class="fas fa-robot me-1"></i> AI-predicted revenue
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Main Chart: Sales Trend -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="sh-card">
+                <div class="sh-chart-header">
+                    <span class="sh-chart-title">Sales Trend</span>
+                    <span class="badge bg-light text-dark border">Last 30 Days</span>
+                </div>
+                <div class="sh-chart-canvas-lg">
+                    <canvas id="salesTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Split Section -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <div class="sh-card" style="padding: 0; overflow: hidden;">
+                <div style="padding: 20px; border-bottom: 1px solid #e1e3e5; display:flex; justify-content:space-between; align-items:center;">
+                    <span class="sh-chart-title">Demand Forecasting</span>
+                    <small class="text-muted">Predictive Inventory Needs</small>
+                </div>
+                <div class="sh-table-wrapper">
+                    <table class="sh-table">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Product Name</th>
+                                <th class="text-center">Trend</th>
+                                <th class="text-center">Tomorrow</th>
+                                <th class="text-center">Next 7 Days</th>
+                                <th class="text-center pe-4">Next 30 Days</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.ProductForecasts != null && Model.ProductForecasts.Any())
+                            {
+                                foreach (var item in Model.ProductForecasts)
+                                {
+                                    <tr>
+                                        <td class="ps-4 fw-bold">@item.ProductName</td>
+                                        <td class="text-center">
+                                            <span class="sh-forecast-trend @(item.Trend.Contains("Rising") ? "trend-up" : "trend-flat")">
+                                                @item.Trend
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span style="color: var(--brand-primary); font-weight:700;">@item.PredictedNextDay</span> units
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="fw-bold">@item.PredictedNextWeek</span> units
+                                        </td>
+                                        <td class="text-center pe-4 text-muted">
+                                            @item.PredictedNextMonth units
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">Not enough data to generate predictions.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="sh-card">
+                <div class="sh-chart-header">
+                    <span class="sh-chart-title">Sales by Hour</span>
+                </div>
+                <div class="sh-chart-canvas-sm">
+                    <canvas id="hourlyTrafficChart"></canvas>
+                </div>
+                <div class="text-center mt-3">
+                    <small class="text-muted">Avg traffic during @periodLabel</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Secondary Charts -->
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="sh-card">
+                <div class="sh-chart-header">
+                    <span class="sh-chart-title">Weekly Pattern</span>
+                    <span class="badge bg-light text-secondary border ms-2" style="font-size: 0.65rem;">30 Days</span>
+                </div>
+                <div class="sh-chart-canvas-sm"><canvas id="salesByDayChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="sh-card">
+                <div class="sh-chart-header">
+                    <span class="sh-chart-title">Top 5 Products</span>
+                    <span class="badge bg-light text-secondary border ms-2" style="font-size: 0.65rem;">30 Days</span>
+                </div>
+                <div class="sh-chart-canvas-sm"><canvas id="bestSellersChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="sh-card">
+                <div class="sh-chart-header">
+                    <span class="sh-chart-title">Highest Margins</span>
+                    <span class="badge bg-light text-secondary border ms-2" style="font-size: 0.65rem;">30 Days</span>
+                </div>
+                <div class="sh-chart-canvas-sm"><canvas id="profitByProductChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function changePeriod(periodCode) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('period', periodCode);
+            window.location.href = url.toString();
+        }
+
+        function exportDashboard() {
+            window.print();
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const brandPrimary = '#8D5B4C';
+            const brandDark = '#4F3422';
+            const brandLight = '#D0B49F';
+            const gridColor = '#f1f2f3';
+
+            // Get Current Period from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentPeriod = urlParams.get('period') || 'month';
+
+            Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+            Chart.defaults.font.size = 11;
+            Chart.defaults.color = '#6D7175';
+            Chart.defaults.borderColor = gridColor;
+
+            function renderChart(canvasId, baseUrl, configBuilder, fixedPeriod = null) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+
+                // Use fixedPeriod if provided, otherwise use current selected period
+                const periodToUse = fixedPeriod || currentPeriod;
+                const fetchUrl = `${baseUrl}?period=${periodToUse}&_t=${new Date().getTime()}`;
+
+                fetch(fetchUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                            new Chart(canvas.getContext('2d'), configBuilder(data));
+                        }
+                    })
+                    .catch(err => console.error("Error loading chart: " + canvasId, err));
+            }
+
+            // 1. Sales Trend - LOCKED TO 'MONTH'
+            renderChart('salesTrendChart', '/Analytics/GetSalesGrowthData', data => ({
+                type: 'line',
+                data: {
+                    labels: data.map(i => new Date(i.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+                    datasets: [{
+                        label: 'Revenue',
+                        data: data.map(i => i.total),
+                        borderColor: brandPrimary,
+                        borderWidth: 2,
+                        backgroundColor: 'rgba(141, 91, 76, 0.05)',
+                        fill: true,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: brandPrimary,
+                        tension: 0
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#fff', titleColor: '#000', bodyColor: '#000',
+                            borderColor: '#dfe3e8', borderWidth: 1, padding: 10, displayColors: false,
+                            callbacks: { label: function(c) { return '₱' + c.parsed.y.toLocaleString(); } }
+                        }
+                    },
+                    scales: {
+                        y: { grid: { borderDash: [4, 4] }, beginAtZero: true },
+                        x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } }
+                    }
+                }
+            }), 'month');
+
+            // 2. Hourly Traffic (Dynamic)
+            renderChart('hourlyTrafficChart', '/Analytics/GetHourlyTrafficData', data => ({
+                type: 'bar',
+                data: {
+                    labels: data.map(i => i.hour),
+                    datasets: [{
+                        label: 'Orders', data: data.map(i => i.count),
+                        backgroundColor: brandDark, borderRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { grid: { display: false } }, y: { display: false } }
+                }
+            }));
+
+            // 3. Weekly Pattern - LOCKED TO 'MONTH'
+            renderChart('salesByDayChart', '/Analytics/GetSalesByDayOfWeekData', data => ({
+                type: 'doughnut',
+                data: {
+                    labels: data.map(i => i.day),
+                    datasets: [{
+                        data: data.map(i => i.total),
+                        backgroundColor: [brandDark, brandPrimary, brandLight, '#E6D4BE', '#A1887F', '#5D4037', '#3E2723'],
+                        borderWidth: 0, hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '70%',
+                    plugins: { legend: { position: 'right', labels: { boxWidth: 10, usePointStyle: true } } }
+                }
+            }), 'month');
+
+            // 4. Best Sellers - LOCKED TO 'MONTH'
+            renderChart('bestSellersChart', '/Analytics/GetBestSellersData', data => ({
+                type: 'bar',
+                data: {
+                    labels: data.map(i => i.productName),
+                    datasets: [{
+                        label: 'Units', data: data.map(i => i.quantitySold),
+                        backgroundColor: brandLight, borderRadius: 3, barThickness: 20
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { grid: { display: false } } }
+                }
+            }), 'month');
+
+            // 5. Profit by Product - LOCKED TO 'MONTH'
+            renderChart('profitByProductChart', '/Analytics/GetProfitByProductData', data => ({
+                type: 'bar',
+                data: {
+                    labels: data.map(i => i.productName),
+                    datasets: [{
+                        label: 'Profit', data: data.map(i => i.totalProfit),
+                        backgroundColor: brandPrimary, borderRadius: 3, barThickness: 20
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { grid: { display: false } } }
+                }
+            }), 'month');
+        });
+    </script>
+}
