@@ -36,3 +36,9 @@
     dotnet run
     ```
     Access the app at `https://localhost:7048`.
+
+    <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/3274b6f6-62a3-4e64-a34e-a3384a80c0b0" />
+    <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/d1748292-c8d5-403e-bebb-9163eb3f74c1" />
+    <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/74f64d63-cb93-4f44-bb08-27ba5ebe2386" />
+
+
