@@ -1,0 +1,103 @@
+﻿@model IEnumerable<POS_91Cafe.ViewModels.IngredientViewModel>
+@{
+    ViewData["Title"] = "Inventory Report";
+}
+
+<!-- SheetJS Library for Excel Export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 text-gray-800">Inventory Report</h1>
+            <p class="text-muted mb-0">Real-time stock levels and valuation</p>
+        </div>
+        <!-- Updated Button -->
+        <button class="btn btn-success" onclick="exportToExcel()">
+            <i class="fas fa-file-excel me-2"></i>Export to Excel
+        </button>
+    </div>
+
+    <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+        <div class="card-header bg-white border-bottom-0 pt-4 px-4">
+            <h5 class="fw-bold text-dark mb-0">Current Stock</h5>
+        </div>
+        <div class="card-body px-4 pb-4">
+            <div class="table-responsive">
+                <!-- Added ID for the export function -->
+                <table id="inventoryTable" class="table table-hover align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-3 rounded-start">Ingredient Name</th>
+                            <th>Stock Level</th>
+                            <th>Unit</th>
+                            <th>Status</th>
+                            <th>Cost / Unit</th>
+                            <th class="rounded-end text-end pe-3">Total Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                // Logic to check if stock is low
+                                var threshold = item.GetType().GetProperty("LowStockThreshold")?.GetValue(item, null) as decimal? ?? 10;
+                                bool isLow = item.CurrentQuantity <= threshold;
+
+                                <tr>
+                                    <td class="ps-3 fw-bold text-dark">@item.Name</td>
+                                    <td>
+                                        <span class="@(isLow ? "text-danger fw-bold" : "text-dark")">
+                                            @item.CurrentQuantity.ToString("N2")
+                                        </span>
+                                    </td>
+                                    <td class="text-muted">@item.Unit</td>
+                                    <td>
+                                        @if (isLow)
+                                        {
+                                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">Low Stock</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success">Good</span>
+                                        }
+                                    </td>
+                                    <td>₱@item.CostPrice.ToString("N2")</td>
+                                    <td class="text-end pe-3 fw-bold">
+                                        ₱@((item.CurrentQuantity * item.CostPrice).ToString("N2"))
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    No inventory data found.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function exportToExcel() {
+        // 1. Get the table element
+        var table = document.getElementById("inventoryTable");
+
+        // 2. Convert table to a SheetJS workbook
+        var wb = XLSX.utils.table_to_book(table, { sheet: "Inventory" });
+
+        // 3. Generate filename with current date
+        var date = new Date().toISOString().slice(0, 10);
+        var filename = "Inventory_Report_" + date + ".xlsx";
+
+        // 4. Download the file
+        XLSX.writeFile(wb, filename);
+    }
+</script>
