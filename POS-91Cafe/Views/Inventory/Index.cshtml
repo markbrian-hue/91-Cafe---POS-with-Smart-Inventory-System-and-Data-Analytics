@@ -1,0 +1,369 @@
+﻿@model IEnumerable<POS_91Cafe.ViewModels.ProductGroup>
+@{
+    ViewData["Title"] = "Inventory Management";
+    var culture = new System.Globalization.CultureInfo("en-PH");
+    Func<decimal, string> peso = v => "₱" + v.ToString("N2");
+}
+
+<!-- Coffee Shop Theme Styles -->
+<style>
+    :root {
+        --card-hover-shadow: 0 10px 20px rgba(62, 39, 35, 0.1);
+    }
+
+    .inventory-header h1 {
+        color: var(--brand-dark);
+        font-weight: 700;
+    }
+
+    .btn-add-product {
+        background-color: var(--brand-primary);
+        color: white;
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.2s;
+    }
+
+        .btn-add-product:hover {
+            background-color: var(--brand-dark);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    /* Filter Inputs */
+    .custom-search-input, .custom-select {
+        border: 1px solid #e0d8d6;
+        background-color: var(--surface-bg);
+        border-radius: 10px;
+        padding: 10px 15px;
+    }
+
+        .custom-search-input:focus, .custom-select:focus {
+            border-color: var(--brand-light);
+            box-shadow: 0 0 0 0.2rem rgba(141, 91, 76, 0.15);
+        }
+
+    /* Product Card */
+    .inventory-card {
+        background: white;
+        border: 1px solid rgba(93, 64, 55, 0.1);
+        border-radius: 16px;
+        transition: all 0.3s ease;
+        height: 100%;
+        overflow: hidden;
+    }
+
+        .inventory-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--card-hover-shadow);
+            border-color: var(--brand-light);
+        }
+
+    .card-title {
+        color: var(--brand-dark);
+        font-weight: 700;
+    }
+
+    .price-tag {
+        color: var(--brand-primary);
+        font-weight: 800;
+        font-size: 1.2rem;
+    }
+
+    .category-badge {
+        background-color: var(--app-bg);
+        color: var(--brand-dark);
+        border: 1px solid rgba(93, 64, 55, 0.1);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 4px 8px;
+        border-radius: 6px;
+    }
+
+    /* Variations */
+    .variation-chip {
+        background-color: #f8f5f2;
+        color: var(--brand-dark);
+        border: 1px solid rgba(93, 64, 55, 0.1);
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        border-radius: 8px;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f5f5f5;
+        color: #666;
+        transition: 0.2s;
+    }
+
+        .action-btn:hover {
+            background-color: var(--brand-light);
+            color: var(--brand-dark);
+        }
+</style>
+
+<div class="container-fluid py-3">
+
+    <!-- Header -->
+    <div class="inventory-header d-flex justify-content-between align-items-center flex-wrap mb-4">
+        <div>
+            <h2 class="mb-1 fw-bold" style="color: var(--brand-dark);">Inventory Management</h2>
+            <p class="text-muted mb-0">Catalog, pricing, and stock overview.</p>
+        </div>
+        <div>
+            <a asp-action="Create" class="btn btn-add-product shadow-sm">
+                <i class="fas fa-plus me-2"></i>Add Product
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="inventory-filters d-flex flex-wrap gap-3 mb-4">
+        <div class="flex-grow-1">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0" style="border-radius: 10px 0 0 10px; border-color: #e0d8d6;"><i class="fas fa-search text-muted"></i></span>
+                <input id="inventorySearch" type="text" class="form-control custom-search-input border-start-0 ps-0" style="border-radius: 0 10px 10px 0;" placeholder="Search products...">
+            </div>
+        </div>
+        <div style="min-width:200px;">
+            <select id="inventoryCategoryFilter" class="form-select custom-select">
+                <option value="All" selected>All Categories</option>
+                @foreach (var cat in Model.SelectMany(g => g.Products)
+                .Select(p => p.Category?.Name)
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Distinct()
+                .OrderBy(n => n))
+                {
+                    <option value="@cat">@cat</option>
+                }
+            </select>
+        </div>
+        <div style="min-width:200px;">
+            <select id="inventorySort" class="form-select custom-select">
+                <option value="name_asc" selected>Name (A-Z)</option>
+                <option value="name_desc">Name (Z-A)</option>
+                <option value="price_asc">Price (Low to High)</option>
+                <option value="price_desc">Price (High to Low)</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Product Grid -->
+    <div id="inventoryGrid" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        @foreach (var group in Model.OrderBy(g => g.BaseName))
+        {
+            // --- FIXED LOGIC: Deduplicate items based on Price and Unit ---
+            // This handles cases where "Americano" was added twice with same price/unit
+            var distinctVars = group.Products
+            .GroupBy(p => new { p.SellingPrice, Unit = (p.Unit ?? "pc").ToLower() })
+            .Select(g => g.First())
+            .OrderBy(p => p.SellingPrice)
+            .ToList();
+
+            var first = distinctVars.First();
+            var categoryName = first.Category?.Name ?? "";
+            var minSell = distinctVars.Min(p => p.SellingPrice);
+            var maxSell = distinctVars.Max(p => p.SellingPrice);
+
+            <div class="col inventory-card-wrapper"
+                 data-name="@group.BaseName.ToLower()"
+                 data-category="@categoryName"
+                 data-price="@minSell">
+
+                <div class="card inventory-card shadow-sm h-100">
+                    <div class="card-body d-flex flex-column">
+
+                        <!-- Card Header -->
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h5 class="card-title mb-1 text-truncate" style="max-width: 200px;">@group.BaseName</h5>
+                                @if (!string.IsNullOrEmpty(categoryName))
+                                {
+                                    <span class="category-badge">@categoryName</span>
+                                }
+                            </div>
+
+                            <!-- Action Dropdown -->
+                            <div class="dropdown">
+                                <button class="btn action-btn" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end border-0 shadow">
+                                    <li>
+                                        <a asp-action="Edit" asp-route-id="@first.ProductID" class="dropdown-item py-2">
+                                            <i class="fas fa-pen me-2 text-secondary"></i> Edit Product
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <button class="dropdown-item text-danger py-2 btn-delete-product"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteConfirmModal"
+                                                data-basename="@group.BaseName">
+                                            <i class="fas fa-trash me-2"></i> Delete Group
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Price Section -->
+                        <div class="mb-3">
+                            <div class="price-tag">
+                                @if (distinctVars.Count > 1 && minSell != maxSell)
+                                {
+                                    <span>@peso(minSell) - @peso(maxSell)</span>
+                                }
+                                else
+                                {
+                                    <span>@peso(minSell)</span>
+                                }
+                            </div>
+                            <small class="text-muted" style="font-size: 0.85rem;">Cost: @peso(first.CostPrice)</small>
+                        </div>
+
+                        <!-- Variations Footer (Only show if we actually have distinct variations) -->
+                        @if (distinctVars.Count > 1)
+                        {
+                            <div class="mt-auto pt-3 border-top">
+                                <small class="text-muted text-uppercase fw-bold mb-2 d-block" style="font-size:0.7rem; letter-spacing:0.5px;">Variations</small>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach (var product in distinctVars)
+                                    {
+                                        // Clean up name logic
+                                        var varName = product.Unit;
+                                        if (string.IsNullOrWhiteSpace(varName) || varName.ToLower() == "pc")
+                                        {
+                                            // Try to find size in Name like "Latte (Large)"
+                                            if (product.Name.Contains("(") && product.Name.EndsWith(")"))
+                                            {
+                                                varName = product.Name.Substring(product.Name.LastIndexOf("(") + 1).Trim(')');
+                                            }
+                                            else
+                                            {
+                                                varName = "Std";
+                                            }
+                                        }
+
+                                        <span class="variation-chip" title="@product.Name">
+                                            <span class="fw-bold">@varName</span> <span class="text-muted ms-1">@peso(product.SellingPrice)</span>
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="text-center py-5" style="display: none;">
+        <div class="text-muted mb-3 opacity-50"><i class="fas fa-coffee fa-4x"></i></div>
+        <h5 class="text-muted fw-bold">No products found</h5>
+        <p class="text-secondary">Try adjusting your search or filters.</p>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-light border-bottom-0">
+                <h5 class="modal-title fw-bold text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Delete Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="mb-0">Are you sure you want to delete <strong id="deleteProductName" class="text-dark"></strong>?</p>
+                <p class="text-muted small mt-2">This will remove all variations and sales history associated with this product group.</p>
+            </div>
+            <div class="modal-footer border-top-0">
+                <form asp-action="DeleteGroup" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="baseName" id="deleteBaseNameInput" />
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger px-4">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('inventorySearch');
+            const categorySelect = document.getElementById('inventoryCategoryFilter');
+            const sortSelect = document.getElementById('inventorySort');
+            const grid = document.getElementById('inventoryGrid');
+            const emptyState = document.getElementById('emptyState');
+
+            let items = Array.from(document.querySelectorAll('.inventory-card-wrapper'));
+
+            function updateGrid() {
+                const term = (searchInput.value || '').toLowerCase().trim();
+                const category = categorySelect.value;
+                const sortValue = sortSelect.value;
+
+                let visibleCount = 0;
+                items.forEach(item => {
+                    const name = item.dataset.name;
+                    const cat = item.dataset.category;
+
+                    const matchesText = !term || name.includes(term);
+                    const matchesCategory = category === 'All' || cat === category;
+
+                    if (matchesText && matchesCategory) {
+                        item.style.display = '';
+                        visibleCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+
+                // Sorting logic
+                items.sort((a, b) => {
+                    if (a.style.display === 'none') return 1;
+
+                    if (sortValue === 'name_asc') return a.dataset.name.localeCompare(b.dataset.name);
+                    if (sortValue === 'name_desc') return b.dataset.name.localeCompare(a.dataset.name);
+
+                    const priceA = parseFloat(a.dataset.price);
+                    const priceB = parseFloat(b.dataset.price);
+
+                    if (sortValue === 'price_asc') return priceA - priceB;
+                    if (sortValue === 'price_desc') return priceB - priceA;
+                    return 0;
+                });
+
+                items.forEach(item => grid.appendChild(item));
+                emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+
+            searchInput.addEventListener('input', updateGrid);
+            categorySelect.addEventListener('change', updateGrid);
+            sortSelect.addEventListener('change', updateGrid);
+
+            // Delete Modal Logic
+            const deleteModal = document.getElementById('deleteConfirmModal');
+            if(deleteModal) {
+                deleteModal.addEventListener('show.bs.modal', evt => {
+                    const btn = evt.relatedTarget;
+                    const baseName = btn.getAttribute('data-basename');
+                    document.getElementById('deleteProductName').textContent = baseName;
+                    document.getElementById('deleteBaseNameInput').value = baseName;
+                });
+            }
+        });
+    </script>
+}

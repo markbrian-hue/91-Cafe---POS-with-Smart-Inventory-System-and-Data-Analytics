@@ -1,0 +1,182 @@
+﻿@model POS_91Cafe.ViewModels.ReportsViewModel
+@{
+    ViewData["Title"] = "Reports Center";
+    Func<decimal, string> money = amount => "₱" + amount.ToString("N2");
+    bool isTruncated = Model.RecentSales.Count >= 1000;
+}
+
+<div class="sh-container">
+
+    <!-- 1. Header Area -->
+    <div class="sh-header d-print-none">
+        <div>
+            <h1 class="sh-title">Financial Reports</h1>
+            <p class="text-muted mb-0" style="font-size: 0.9rem;">
+                Performance for <strong class="text-dark">@Model.StartDate.ToString("MMM dd, yyyy") - @Model.EndDate.ToString("MMM dd, yyyy")</strong>
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Inventory" class="sh-btn-secondary text-decoration-none">
+                <i class="fas fa-boxes me-2"></i>Inventory
+            </a>
+            <!-- Calls the Server-Side Export -->
+            <button class="sh-btn-secondary" onclick="downloadServerExport()">
+                <i class="fas fa-file-excel text-success me-2"></i>Export All
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. Date Filter Toolbar -->
+    <div class="sh-card mb-4 p-3 d-print-none">
+        <form method="get" class="d-flex align-items-center flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-2">
+                <i class="far fa-calendar-alt text-muted"></i>
+                <span class="fw-bold text-muted small text-uppercase">Filter Date:</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <input type="date" id="filterStartDate" name="startDate" class="form-control form-control-sm border-0 bg-light fw-bold"
+                       value="@Model.StartDate.ToString("yyyy-MM-dd")" required>
+                <span class="text-muted">-</span>
+                <input type="date" id="filterEndDate" name="endDate" class="form-control form-control-sm border-0 bg-light fw-bold"
+                       value="@Model.EndDate.ToString("yyyy-MM-dd")" required>
+
+                <button type="submit" class="btn btn-sm btn-primary ms-2 px-3" style="background-color: var(--brand-dark); border: none;">
+                    Apply
+                </button>
+            </div>
+
+            <div class="ms-auto text-muted small">
+                @if (isTruncated)
+                {
+                    <span class="text-warning fw-bold"><i class="fas fa-exclamation-triangle me-1"></i> Limited to 1,000 rows (Export for full)</span>
+                }
+                else if (Model.RecentSales.Any())
+                {
+                    <span>Showing @Model.RecentSales.Count transaction records</span>
+                }
+            </div>
+        </form>
+    </div>
+
+    <!-- 3. Financial Stats Cards (Calculated on Full Data) -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="sh-card">
+                <div class="sh-metric-label">TOTAL REVENUE</div>
+                <div class="sh-metric-value" style="color: var(--brand-dark);">@money(Model.TotalRevenue)</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="sh-card">
+                <div class="sh-metric-label">NET PROFIT</div>
+                <div class="sh-metric-value text-success">@money(Model.TotalProfit)</div>
+                <div class="sh-metric-footer">
+                    <span class="text-muted">Margin: </span>
+                    <strong class="text-success">@(Model.TotalRevenue > 0 ? ((Model.TotalProfit / Model.TotalRevenue) * 100).ToString("F1") : "0")%</strong>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="sh-card">
+                <div class="sh-metric-label">TRANSACTIONS</div>
+                <div class="sh-metric-value">@Model.TransactionCount</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="sh-card">
+                <div class="sh-metric-label">AVG. TICKET</div>
+                <div class="sh-metric-value">@money(Model.AverageTicket)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Detailed Transaction Table -->
+    <div id="transaction-table-card" class="sh-card" style="padding: 0; overflow: hidden;">
+        <div class="p-3 border-bottom bg-light d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-bold text-dark">Transaction History</h6>
+            <span class="badge bg-white text-secondary border">
+                @Model.StartDate.ToString("MMM dd") - @Model.EndDate.ToString("MMM dd")
+            </span>
+        </div>
+
+        <div class="sh-table-wrapper">
+            <table class="sh-table table-hover">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Date & Time</th>
+                        <th>Sale ID</th>
+                        <th>Payment Method</th>
+                        <th class="text-center">Items</th>
+                        <th class="text-end pe-4">Total Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.RecentSales != null && Model.RecentSales.Any())
+                    {
+                        foreach (var sale in Model.RecentSales)
+                        {
+                            var localDate = sale.Date.Kind == DateTimeKind.Utc ? sale.Date.ToLocalTime() : sale.Date;
+                            <tr>
+                                <td class="ps-4 text-dark fw-bold">
+                                    @localDate.ToString("MMM dd, yyyy")
+                                    <span class="text-muted small fw-normal ms-1">@localDate.ToString("hh:mm tt")</span>
+                                </td>
+                                <td><span class="text-secondary small">#@sale.SaleID</span></td>
+                                <td>
+                                    @if (sale.PaymentMethod == "Cash")
+                                    {
+                                        <span class="badge bg-light text-dark border">Cash</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">Digital</span>
+                                    }
+                                </td>
+                                <td class="text-center text-muted">@sale.ItemCount</td>
+                                <td class="text-end pe-4 fw-bold" style="color: var(--brand-dark);">@money(sale.Total)</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <p>No transactions found for this period.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function downloadServerExport() {
+        // Grab dates from the inputs to ensure we export what we see
+        var start = document.getElementById('filterStartDate').value;
+        var end = document.getElementById('filterEndDate').value;
+
+        // Trigger the controller action
+        window.location.href = `/Reports/ExportTransactions?startDate=${start}&endDate=${end}`;
+    }
+</script>
+                        </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function downloadServerExport() {
+        // Grab dates from the inputs to ensure we export what we see
+        var start = document.getElementById('filterStartDate').value;
+        var end = document.getElementById('filterEndDate').value;
+
+        // Trigger the controller action
+        window.location.href = `/Reports/ExportTransactions?startDate=${start}&endDate=${end}`;
+    }
+</script>

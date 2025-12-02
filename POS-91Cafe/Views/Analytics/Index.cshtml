@@ -1,0 +1,407 @@
+﻿@model POS_91Cafe.ViewModels.AnalyticsViewModel
+@{
+    ViewData["Title"] = "Analytics Dashboard";
+
+    // Get parameters from URL
+    var currentPeriod = Context.Request.Query["period"].ToString();
+    var startDateQuery = Context.Request.Query["startDate"].ToString();
+    var endDateQuery = Context.Request.Query["endDate"].ToString();
+
+    // Determine Label
+    string periodLabel = "All Time History"; // Default Label
+
+    if (!string.IsNullOrEmpty(startDateQuery) && !string.IsNullOrEmpty(endDateQuery))
+    {
+        if (DateTime.TryParse(startDateQuery, out DateTime s) && DateTime.TryParse(endDateQuery, out DateTime e))
+        {
+            periodLabel = $"{s:MMM dd} - {e:MMM dd}";
+        }
+    }
+    else if (!string.IsNullOrEmpty(currentPeriod) && currentPeriod.ToLower() != "all")
+    {
+        periodLabel = currentPeriod.ToLower() switch
+        {
+            "today" => "Today",
+            "yesterday" => "Yesterday",
+            "week" => "Last 7 Days",
+            "month" => "Last 30 Days",
+            _ => "All Time History"
+        };
+    }
+}
+
+<div class="sh-container">
+
+    <!-- 1. Header Area -->
+    <div class="sh-header">
+        <div>
+            <h1 class="sh-title">Overview</h1>
+            <p class="text-muted mb-0" style="font-size: 0.9rem;">
+                <span class="badge bg-light text-dark border me-1">Showing: @periodLabel</span>
+                Real-time performance and AI forecasting.
+            </p>
+        </div>
+    </div>
+
+    <!-- 2. Filter Toolbar -->
+    <div class="sh-card mb-4 p-3">
+        <form method="get" class="d-flex align-items-center flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-2">
+                <i class="far fa-calendar-alt text-muted"></i>
+                <span class="fw-bold text-muted small text-uppercase">Filter Date:</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <input type="date" name="startDate" class="form-control form-control-sm border-0 bg-light fw-bold"
+                       value="@startDateQuery">
+                <span class="text-muted">-</span>
+                <input type="date" name="endDate" class="form-control form-control-sm border-0 bg-light fw-bold"
+                       value="@endDateQuery">
+
+                <button type="submit" class="btn btn-sm btn-primary ms-2 px-3" style="background-color: var(--brand-dark); border: none;">
+                    Apply
+                </button>
+
+                <!-- Reset to All Time Button -->
+                <a href="/Analytics" class="btn btn-sm btn-outline-secondary ms-2" title="Reset to All Time">
+                    <i class="fas fa-undo"></i>
+                </a>
+            </div>
+
+            <!-- REMOVED: Quick Presets Group -->
+
+            <div class="ms-auto">
+                <button type="button" class="sh-btn-secondary btn-sm" onclick="exportDashboard()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 3. Primary KPI Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="sh-card">
+                <div class="sh-metric-label">
+                    TOTAL SALES
+                    <i class="fas fa-ellipsis-h sh-icon-subtle"></i>
+                </div>
+                <div class="sh-metric-value">
+                    @Model.TodaysSales.ToString("C0", new System.Globalization.CultureInfo("en-PH"))
+                </div>
+                <div class="sh-metric-footer">
+                    <span class="text-dark fw-bold">@Model.TodaysTransactions</span>
+                    <span> transactions</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="sh-card">
+                <div class="sh-metric-label">
+                    AVG. ORDER VALUE
+                    <i class="fas fa-ellipsis-h sh-icon-subtle"></i>
+                </div>
+                <div class="sh-metric-value">
+                    @Model.AverageTransactionValue.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+                </div>
+                <div class="sh-metric-footer">
+                    <span>per customer avg.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="sh-card">
+                <div class="sh-metric-label">
+                    TOP PRODUCT
+                    <i class="fas fa-crown sh-icon-subtle text-warning"></i>
+                </div>
+                <div class="sh-metric-value fs-4 text-truncate" title="@Model.TopProduct">
+                    @Model.TopProduct
+                </div>
+                <div class="sh-metric-footer">
+                    <span class="text-success fw-bold">@Model.TopProductUnits</span>
+                    <span> units sold</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="sh-card" style="background: linear-gradient(145deg, #4F3422, #3E2723); border: none;">
+                <div class="sh-metric-label text-white-50">
+                    FORECAST (NEXT 7 DAYS)
+                    <i class="fas fa-magic text-white-50"></i>
+                </div>
+                <div class="sh-metric-value text-white">
+                    @Model.NextSevenDayForecast.ToString("C0", new System.Globalization.CultureInfo("en-PH"))
+                </div>
+                <div class="sh-metric-footer text-white-50">
+                    <i class="fas fa-robot me-1"></i> AI-predicted revenue
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Main Chart: Sales Trend -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="sh-card">
+                <div class="sh-chart-header">
+                    <span class="sh-chart-title">Sales Trend</span>
+                    <span class="badge bg-light text-dark border">@periodLabel</span>
+                </div>
+                <div class="sh-chart-canvas-lg">
+                    <canvas id="salesTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Split Section -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <div class="sh-card" style="padding: 0; overflow: hidden;">
+                <div style="padding: 20px; border-bottom: 1px solid #e1e3e5; display:flex; justify-content:space-between; align-items:center;">
+                    <span class="sh-chart-title">Demand Forecasting</span>
+                    <small class="text-muted">Predictive Inventory Needs</small>
+                </div>
+                <div class="sh-table-wrapper">
+                    <table class="sh-table">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Product Name</th>
+                                <th class="text-center">Trend</th>
+                                <th class="text-center">Tomorrow</th>
+                                <th class="text-center">Next 7 Days</th>
+                                <th class="text-center pe-4">Next 30 Days</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.ProductForecasts != null && Model.ProductForecasts.Any())
+                            {
+                                foreach (var item in Model.ProductForecasts)
+                                {
+                                    <tr>
+                                        <td class="ps-4 fw-bold">@item.ProductName</td>
+                                        <td class="text-center">
+                                            <span class="sh-forecast-trend @(item.Trend.Contains("Rising") ? "trend-up" : "trend-flat")">
+                                                @item.Trend
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span style="color: var(--brand-primary); font-weight:700;">@item.PredictedNextDay</span> units
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="fw-bold">@item.PredictedNextWeek</span> units
+                                        </td>
+                                        <td class="text-center pe-4 text-muted">
+                                            @item.PredictedNextMonth units
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">Not enough data to generate predictions.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="sh-card">
+                <div class="sh-chart-header">
+                    <span class="sh-chart-title">Sales by Hour</span>
+                </div>
+                <div class="sh-chart-canvas-sm">
+                    <canvas id="hourlyTrafficChart"></canvas>
+                </div>
+                <div class="text-center mt-3">
+                    <small class="text-muted">Avg traffic during @periodLabel</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Secondary Charts (NOW DYNAMIC) -->
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="sh-card">
+                <div class="sh-chart-header">
+                    <span class="sh-chart-title">Weekly Pattern</span>
+                    <span class="badge bg-light text-secondary border ms-2" style="font-size: 0.65rem;">@periodLabel</span>
+                </div>
+                <div class="sh-chart-canvas-sm"><canvas id="salesByDayChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="sh-card">
+                <div class="sh-chart-header">
+                    <span class="sh-chart-title">Top 5 Products</span>
+                    <span class="badge bg-light text-secondary border ms-2" style="font-size: 0.65rem;">@periodLabel</span>
+                </div>
+                <div class="sh-chart-canvas-sm"><canvas id="bestSellersChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="sh-card">
+                <div class="sh-chart-header">
+                    <span class="sh-chart-title">Highest Margins</span>
+                    <span class="badge bg-light text-secondary border ms-2" style="font-size: 0.65rem;">@periodLabel</span>
+                </div>
+                <div class="sh-chart-canvas-sm"><canvas id="profitByProductChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function exportDashboard() {
+            window.print();
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const brandPrimary = '#8D5B4C';
+            const brandDark = '#4F3422';
+            const brandLight = '#D0B49F';
+            const gridColor = '#f1f2f3';
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentPeriod = urlParams.get('period') || 'all'; // Default to ALL
+            const startDate = urlParams.get('startDate');
+            const endDate = urlParams.get('endDate');
+
+            Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+            Chart.defaults.font.size = 11;
+            Chart.defaults.color = '#6D7175';
+            Chart.defaults.borderColor = gridColor;
+
+            function renderChart(canvasId, baseUrl, configBuilder) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+
+                let fetchUrl = baseUrl;
+
+                // Always use dynamic filtering
+                if (startDate && endDate) {
+                    fetchUrl += `?startDate=${startDate}&endDate=${endDate}`;
+                } else {
+                    fetchUrl += `?period=${currentPeriod}`;
+                }
+
+                fetchUrl += `&_t=${new Date().getTime()}`;
+
+                fetch(fetchUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                            new Chart(canvas.getContext('2d'), configBuilder(data));
+                        }
+                    })
+                    .catch(err => console.error("Error loading chart: " + canvasId, err));
+            }
+
+            // 1. Sales Trend
+            renderChart('salesTrendChart', '/Analytics/GetSalesGrowthData', data => ({
+                type: 'line',
+                data: {
+                    labels: data.map(i => new Date(i.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+                    datasets: [{
+                        label: 'Revenue',
+                        data: data.map(i => i.total),
+                        borderColor: brandPrimary,
+                        borderWidth: 2,
+                        backgroundColor: 'rgba(141, 91, 76, 0.05)',
+                        fill: true,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: brandPrimary,
+                        tension: 0
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { borderDash: [4, 4] }, beginAtZero: true },
+                        x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } }
+                    }
+                }
+            }));
+
+            // 2. Hourly Traffic
+            renderChart('hourlyTrafficChart', '/Analytics/GetHourlyTrafficData', data => ({
+                type: 'bar',
+                data: {
+                    labels: data.map(i => i.hour),
+                    datasets: [{
+                        label: 'Orders', data: data.map(i => i.count),
+                        backgroundColor: brandDark, borderRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { grid: { display: false } }, y: { display: false } }
+                }
+            }));
+
+            // 3. Weekly Pattern (Now Dynamic)
+            renderChart('salesByDayChart', '/Analytics/GetSalesByDayOfWeekData', data => ({
+                type: 'doughnut',
+                data: {
+                    labels: data.map(i => i.day),
+                    datasets: [{
+                        data: data.map(i => i.total),
+                        backgroundColor: [brandDark, brandPrimary, brandLight, '#E6D4BE', '#A1887F', '#5D4037', '#3E2723'],
+                        borderWidth: 0, hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '70%',
+                    plugins: { legend: { position: 'right', labels: { boxWidth: 10, usePointStyle: true } } }
+                }
+            }));
+
+            // 4. Best Sellers (Now Dynamic)
+            renderChart('bestSellersChart', '/Analytics/GetBestSellersData', data => ({
+                type: 'bar',
+                data: {
+                    labels: data.map(i => i.productName),
+                    datasets: [{
+                        label: 'Units', data: data.map(i => i.quantitySold),
+                        backgroundColor: brandLight, borderRadius: 3, barThickness: 20
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { grid: { display: false } } }
+                }
+            }));
+
+            // 5. Profit by Product (Now Dynamic)
+            renderChart('profitByProductChart', '/Analytics/GetProfitByProductData', data => ({
+                type: 'bar',
+                data: {
+                    labels: data.map(i => i.productName),
+                    datasets: [{
+                        label: 'Profit', data: data.map(i => i.totalProfit),
+                        backgroundColor: brandPrimary, borderRadius: 3, barThickness: 20
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { grid: { display: false } } }
+                }
+            }));
+        });
+    </script>
+}

@@ -1,0 +1,147 @@
+﻿@model IEnumerable<POS_91Cafe.ViewModels.IngredientViewModel>
+@{
+    ViewData["Title"] = "Inventory Report";
+
+    // Calculate Summary Metrics for the Top Cards
+    decimal totalAssetValue = 0;
+    int totalItems = 0;
+    int lowStockItems = 0;
+
+    if (Model != null)
+    {
+        totalItems = Model.Count();
+        totalAssetValue = Model.Sum(i => i.CurrentQuantity * i.CostPrice);
+
+        // Count low stock based on the Status property from Controller
+        // The Controller sets Status to "Low Stock" or "Good"
+        lowStockItems = Model.Count(i => i.Status != null && i.Status.Contains("Low"));
+    }
+}
+
+<!-- SheetJS Library for Excel Export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<div class="sh-container">
+
+    <!-- 1. Header Area -->
+    <div class="sh-header">
+        <div>
+            <h1 class="sh-title">Inventory Valuation</h1>
+            <p class="text-muted mb-0" style="font-size: 0.9rem;">Real-time asset tracking and stock levels.</p>
+        </div>
+        <!-- Added Back Button and Flex Container -->
+        <div class="d-flex gap-2">
+            <a asp-action="Index" class="sh-btn-secondary text-decoration-none">
+                <i class="fas fa-arrow-left me-2"></i>Back to Reports
+            </a>
+            <button class="sh-btn-secondary" onclick="exportToExcel()">
+                <i class="fas fa-file-excel text-success me-2"></i>Export to Excel
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="sh-card p-3">
+                <div class="sh-metric-label">TOTAL ASSET VALUE</div>
+                <div class="sh-metric-value text-success">
+                    @totalAssetValue.ToString("C2", new System.Globalization.CultureInfo("en-PH"))
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="sh-card p-3">
+                <div class="sh-metric-label">TOTAL INGREDIENTS</div>
+                <div class="sh-metric-value">@totalItems</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="sh-card p-3">
+                <div class="sh-metric-label">LOW STOCK ALERTS</div>
+                <div class="sh-metric-value @(lowStockItems > 0 ? "text-danger" : "text-dark")">@lowStockItems</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Data Table -->
+    <div class="sh-card" style="padding: 0; overflow: hidden;">
+        <div class="p-3 border-bottom bg-light">
+            <h6 class="mb-0 fw-bold text-dark">Stock Details</h6>
+        </div>
+        <div class="sh-table-wrapper">
+            <table id="inventoryTable" class="sh-table">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Ingredient Name</th>
+                        <th>Stock Level</th>
+                        <th>Unit</th>
+                        <th>Status</th>
+                        <th>Cost / Unit</th>
+                        <th class="text-end pe-4">Total Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            // Rely on the Controller-provided Status
+                            bool isLow = item.Status != null && item.Status.Contains("Low");
+
+                            <tr>
+                                <td class="ps-4 fw-bold text-dark">@item.Name</td>
+                                <td>
+                                    <span class="@(isLow ? "text-danger fw-bold" : "text-dark")">
+                                        @item.CurrentQuantity.ToString("N2")
+                                    </span>
+                                </td>
+                                <td class="text-muted small text-uppercase">@item.Unit</td>
+                                <td>
+                                    @if (isLow)
+                                    {
+                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-2">Low Stock</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2">Good</span>
+                                    }
+                                </td>
+                                <td>₱@item.CostPrice.ToString("N2")</td>
+                                <td class="text-end pe-4 fw-bold">
+                                    ₱@((item.CurrentQuantity * item.CostPrice).ToString("N2"))
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="fas fa-box-open fa-2x mb-3 opacity-25"></i>
+                                <p>No inventory data found.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function exportToExcel() {
+        // 1. Get the table element
+        var table = document.getElementById("inventoryTable");
+
+        // 2. Convert table to a SheetJS workbook
+        var wb = XLSX.utils.table_to_book(table, { sheet: "Inventory" });
+
+        // 3. Generate filename with current date
+        var date = new Date().toISOString().slice(0, 10);
+        var filename = "Inventory_Valuation_" + date + ".xlsx";
+
+        // 4. Download the file
+        XLSX.writeFile(wb, filename);
+    }
+</script>

@@ -1,0 +1,191 @@
+﻿@{
+    ViewData["Title"] = "Order History";
+}
+
+<div class="sh-container">
+
+    <!-- 1. Header Area -->
+    <div class="sh-header">
+        <div>
+            <h1 class="sh-title">Order History</h1>
+            <p class="text-muted mb-0" style="font-size: 0.9rem;">View and manage past transactions.</p>
+        </div>
+    </div>
+
+    <!-- 2. Filter Toolbar -->
+    <div class="sh-card mb-4 p-4">
+        <div class="row g-3 align-items-end">
+            <!-- Date Range -->
+            <div class="col-md-5">
+                <label class="form-label small text-muted fw-bold text-uppercase">Date Range</label>
+                <div class="input-group">
+                    <input type="date" id="startDate" class="form-control bg-light border-0" style="font-weight: 600; height: 45px;" onchange="loadTickets()">
+                    <span class="input-group-text bg-light border-0 text-muted">-</span>
+                    <input type="date" id="endDate" class="form-control bg-light border-0" style="font-weight: 600; height: 45px;" onchange="loadTickets()">
+                </div>
+            </div>
+
+            <!-- Search -->
+            <div class="col-md-4">
+                <label class="form-label small text-muted fw-bold text-uppercase">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0 text-muted"><i class="fas fa-search"></i></span>
+                    <input type="text" id="searchFilter" class="form-control bg-light border-0" placeholder="Sale ID or Item Name..." style="height: 45px;" onkeyup="loadTickets()">
+                </div>
+            </div>
+
+            <!-- Payment Method -->
+            <div class="col-md-3">
+                <label class="form-label small text-muted fw-bold text-uppercase">Payment</label>
+                <select id="paymentFilter" class="form-select bg-light border-0 fw-bold" style="cursor: pointer; height: 45px;" onchange="loadTickets()">
+                    <option value="">All Payments</option>
+                    <option value="Cash">Cash</option>
+                    <option value="GCash">GCash / Maya</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Tickets Grid -->
+    <div id="ticketsContainer" class="row g-4">
+        <!-- Tickets load here -->
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // 1. Set default date range (Today)
+            const now = new Date();
+            const phTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Manila" }));
+
+            const yyyy = phTime.getFullYear();
+            const mm = String(phTime.getMonth() + 1).padStart(2, '0');
+            const dd = String(phTime.getDate()).padStart(2, '0');
+            const todayStr = `${yyyy}-${mm}-${dd}`;
+
+            document.getElementById('startDate').value = todayStr;
+            document.getElementById('endDate').value = todayStr;
+
+            // 2. Load initial data
+            loadTickets();
+        });
+
+        // Debounce function to prevent API spam on search typing
+        let debounceTimer;
+
+        async function loadTickets() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(async () => {
+                await fetchTickets();
+            }, 300); // 300ms delay for search typing
+        }
+
+        async function fetchTickets() {
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            const search = document.getElementById('searchFilter').value;
+            const payment = document.getElementById('paymentFilter').value;
+            const container = document.getElementById('ticketsContainer');
+
+            // Show Loading Spinner
+            container.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <div class="spinner-border text-secondary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-muted mt-2">Loading transactions...</p>
+                </div>`;
+
+            // Build Query Params
+            const params = new URLSearchParams();
+            if (start) params.append('startDate', start);
+            if (end) params.append('endDate', end);
+            if (search) params.append('search', search);
+            if (payment && payment !== "") params.append('payment', payment);
+
+            try {
+                const res = await fetch(`/OrderTickets/GetTickets?${params.toString()}`);
+                if (!res.ok) throw new Error("Network error");
+
+                const data = await res.json();
+                container.innerHTML = '';
+
+                if (data.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-12 text-center py-5">
+                            <i class="fas fa-search fa-3x text-muted opacity-25 mb-3"></i>
+                            <h5 class="text-muted fw-bold">No orders found</h5>
+                            <p class="text-secondary">Try adjusting your date range or filters.</p>
+                        </div>`;
+                    return;
+                }
+
+                let htmlContent = '';
+                data.forEach(ticket => {
+                    // Format Items List
+                    let itemsHtml = ticket.items.map(i =>
+                        `<div class="d-flex justify-content-between align-items-center mb-2" style="font-size: 0.85rem;">
+                            <div class="text-truncate pe-2">
+                                <span class="fw-bold text-dark">${i.quantity}x</span> ${i.productName}
+                            </div>
+                            <span class="text-secondary fw-bold">₱${i.lineTotal.toFixed(2)}</span>
+                         </div>`
+                    ).join('');
+
+                    // Date Handling
+                    let dateStr = ticket.saleDate;
+                    if (dateStr && !dateStr.endsWith("Z")) dateStr += "Z";
+                    const saleDate = new Date(dateStr);
+
+                    const dateDisplay = saleDate.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+                    const timeDisplay = saleDate.toLocaleTimeString('en-PH', {
+                        timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit', hour12: true
+                    });
+
+                    // Payment Badge Color
+                    let paymentBadge = '';
+                    if (ticket.paymentMethod === 'Cash') {
+                        paymentBadge = `<span class="badge bg-light text-dark border"><i class="fas fa-money-bill-wave me-1 text-muted"></i> Cash</span>`;
+                    } else {
+                        paymentBadge = `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary"><i class="fas fa-mobile-alt me-1"></i> GCash / Maya</span>`;
+                    }
+
+                    // FIXED: Added d-flex flex-column to sh-card and flex-grow-1 to items area
+                    // This forces the Footer to always be at the bottom
+                    htmlContent += `
+                        <div class="col-md-6 col-lg-4 col-xl-3">
+                            <div class="sh-card h-100 p-0 overflow-hidden d-flex flex-column" style="border: 1px solid var(--border-color);">
+                                <!-- Ticket Header -->
+                                <div class="p-3 border-bottom bg-light d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-bold text-dark">#${ticket.saleId}</span>
+                                        <div class="text-muted" style="font-size: 0.75rem;">${dateDisplay} • ${timeDisplay}</div>
+                                    </div>
+                                    ${paymentBadge}
+                                </div>
+
+                                <!-- Items Area (Grows to fill space) -->
+                                <div class="p-3 flex-grow-1" style="min-height: 100px;">
+                                    ${itemsHtml}
+                                </div>
+
+                                <!-- Footer Total (Sticky Bottom) -->
+                                <div class="p-3 bg-white border-top d-flex justify-content-between align-items-center mt-auto">
+                                    <span class="text-muted small text-uppercase fw-bold">Total</span>
+                                    <span class="fw-bold text-dark fs-5">₱${ticket.totalAmount.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = htmlContent;
+
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = `<div class="col-12 text-center text-danger py-5">Failed to load tickets. Please try again.</div>`;
+            }
+        }
+    </script>
+}

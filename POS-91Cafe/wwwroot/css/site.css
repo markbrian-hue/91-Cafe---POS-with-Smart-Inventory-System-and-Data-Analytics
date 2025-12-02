@@ -1,0 +1,2036 @@
+/* =================================================================
+   91 Cafe POS - Figma Redesign v4.1 (Sidebar Fix)
+   ================================================================= */
+
+/* --- 1. Root Variables & Base Styles --- */
+:root {
+    --brand-primary: #8D5B4C;
+    --brand-dark: #4F3422;
+    --surface-bg: #FFFFFF;
+    --app-bg: #F9F6F2;
+    --text-primary: #3D405B;
+    --text-secondary: #7D809D;
+    --border-color: #EAEAEA;
+    --brand-light: #D0B49F;
+    --font-family-sans-serif: 'Poppins', sans-serif;
+}
+
+body {
+    font-family: var(--font-family-sans-serif);
+    background-color: var(--app-bg);
+    color: var(--text-primary);
+}
+
+.main-wrapper {
+    display: flex;
+}
+
+.content-main {
+    flex-grow: 1;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 2rem;
+}
+
+/* --- 2. New Sidebar (Corrected Styles) --- */
+/* --- 2. New Sidebar (Redesigned Professional Look) --- */
+.sidebar-desktop {
+    width: 260px;
+    /* Rich Coffee Gradient */
+    background: linear-gradient(180deg, #2D1F19 0%, #3E2723 100%);
+    color: white;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+/* Branding Header */
+.sidebar-header {
+    padding: 30px 20px;
+    margin-bottom: 10px;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: white;
+    gap: 15px;
+    transition: opacity 0.2s;
+}
+
+    .sidebar-brand:hover {
+        opacity: 0.9;
+        color: white;
+    }
+
+/* Brand Icon Box */
+.brand-icon-box {
+    width: 42px;
+    height: 42px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: var(--brand-light);
+}
+
+.brand-text h4 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.1;
+    letter-spacing: 0.5px;
+}
+
+.brand-text span {
+    font-size: 0.7rem;
+    opacity: 0.6;
+    font-weight: 400;
+    display: block;
+    margin-top: 2px;
+}
+
+/* Navigation Container */
+.sidebar-menu {
+    padding: 0 12px;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+/* Section Labels (e.g., "OPERATIONS") */
+.nav-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.4);
+    margin: 20px 12px 8px;
+    font-weight: 600;
+}
+
+/* Link Styles */
+.nav-link {
+    color: #A1887F !important; /* Muted coffee text */
+    padding: 11px 16px;
+    margin-bottom: 4px;
+    border-radius: 10px; /* Rounded Pill Shape */
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: none;
+    font-size: 0.9rem;
+}
+
+    .nav-link i {
+        font-size: 1.1rem;
+        width: 24px;
+        text-align: center;
+        transition: transform 0.2s;
+    }
+
+    /* Hover State */
+    .nav-link:hover {
+        background-color: rgba(255,255,255,0.05);
+        color: #EFEBE9 !important;
+        padding-left: 19px; /* Subtle shift effect */
+    }
+
+        .nav-link:hover i {
+            transform: scale(1.1);
+        }
+
+    /* Active State */
+    .nav-link.active {
+        background-color: var(--brand-primary);
+        color: white !important;
+        box-shadow: 0 4px 15px rgba(141, 91, 76, 0.4); /* Soft glow */
+        font-weight: 600;
+    }
+
+        .nav-link.active i {
+            color: white;
+        }
+
+/* Scrollbar for sidebar */
+.sidebar-menu::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+}
+
+.sidebar-menu::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* --- 3. Redesigned Sales Page --- */
+.sales-layout {
+    display: flex;
+    height: 100%;
+    gap: 1.5rem;
+}
+
+.sales-grid-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.sales-sidebar-container {
+    width: 400px;
+    flex-shrink: 0;
+    background: var(--surface-bg);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+}
+
+.sales-sidebar {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+}
+
+/* Product Grid */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.25rem;
+    overflow-y: auto;
+    flex-grow: 1;
+    padding: 1rem;
+}
+
+.product-card {
+    background: var(--surface-bg);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+
+.product-card-body {
+    padding: 1rem;
+}
+
+.product-name {
+    font-weight: 600;
+}
+
+.product-price {
+    font-weight: 700;
+    color: var(--brand-primary);
+    font-size: 1.2rem;
+}
+
+.product-category-tag {
+    background-color: var(--brand-light);
+    color: var(--brand-dark);
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.product-stock {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* New Cart */
+.cart-header {
+    font-size: 1.25rem;
+    font-weight: 600;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.cart-items-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    margin: 1rem 0;
+}
+
+.cart-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+    .cart-item:first-child {
+        padding-top: 0;
+    }
+
+    .cart-item:last-child {
+        border-bottom: none;
+    }
+
+.cart-item-details {
+    flex-grow: 1;
+}
+
+.cart-item-name {
+    font-weight: 600;
+}
+
+.cart-item-price {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.cart-item-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+    .cart-item-controls .btn {
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--app-bg);
+        border: none;
+        font-weight: 600;
+    }
+
+    .cart-item-controls .quantity {
+        font-weight: 600;
+    }
+
+.cart-item-total {
+    font-weight: 700;
+    margin-left: 1rem;
+}
+
+.cart-footer {
+    flex-shrink: 0;
+}
+
+.cart-total {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 1.2rem;
+    padding: 1rem 0;
+}
+
+.payment-method .form-select {
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+#process-sale-btn {
+    background-color: var(--brand-dark);
+    color: white;
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+}
+
+/* General page header */
+.page-header {
+    margin-bottom: 1.5rem;
+}
+
+.ticket-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    align-items: center;
+}
+
+.ticket-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.order-ticket {
+    background: var(--surface-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    display: flex;
+    flex-direction: column;
+}
+
+.ticket-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ticket-id {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.ticket-date, .ticket-time {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.payment-tag {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    color: var(--brand-dark);
+    background-color: var(--brand-light);
+}
+
+.ticket-body {
+    padding: 1rem;
+    flex-grow: 1;
+}
+
+.ticket-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+}
+
+    .ticket-item .item-name {
+        color: var(--text-primary);
+    }
+
+    .ticket-item .item-price {
+        font-weight: 600;
+    }
+
+.ticket-footer {
+    padding: 1rem;
+    border-top: 2px dashed var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+.inventory-header h1 {
+    font-weight: 600;
+}
+
+.btn.btn-brand-inventory {
+    background-color: var(--brand-dark);
+    color: #fff;
+    font-weight: 600;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+}
+
+    .btn.btn-brand-inventory:hover {
+        background-color: var(--brand-primary);
+    }
+
+.inventory-filters .inventory-search {
+    background-color: #f1efec;
+    border: none;
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+}
+
+.inventory-filters .inventory-select {
+    background-color: #f1efec;
+    border: none;
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+}
+
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.inventory-card {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.25rem 1.25rem 1rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+    transition: box-shadow .15s, transform .15s;
+}
+
+    .inventory-card:hover {
+        box-shadow: 0 8px 28px rgba(0,0,0,0.08);
+        transform: translateY(-4px);
+    }
+
+.inventory-card-title {
+    font-weight: 600;
+    font-size: 1.15rem;
+}
+
+.inventory-category-badge {
+    display: inline-block;
+    background: var(--brand-light);
+    color: var(--brand-dark);
+    padding: 0.3rem 0.7rem;
+    font-size: 0.7rem;
+    border-radius: 14px;
+    font-weight: 600;
+    margin-top: .5rem;
+}
+
+.inventory-card-actions {
+    display: flex;
+    gap: .4rem;
+}
+
+.btn-card-action {
+    background: #f7f5f3;
+    border: 1px solid #e2ddd9;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: .9rem;
+    color: var(--text-primary);
+}
+
+    .btn-card-action:hover {
+        background: var(--brand-primary);
+        color: #fff;
+        border-color: var(--brand-primary);
+    }
+
+.inventory-card-body .inv-label {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--text-secondary);
+    display: block;
+}
+
+.inventory-card-body .inv-value {
+    font-weight: 600;
+    font-size: .95rem;
+    color: var(--text-primary);
+}
+
+.variation-wrapper .variation-label {
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.variation-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+}
+
+.variation-chip {
+    background: #f1efec;
+    color: var(--brand-dark);
+    font-size: .65rem;
+    padding: .4rem .6rem;
+    border-radius: 14px;
+    font-weight: 600;
+    letter-spacing: .3px;
+}
+
+@media (max-width: 600px) {
+    .inventory-grid {
+        grid-template-columns: 1fr;
+    }
+}
+.pos-container {
+    height: calc(100vh - 100px);
+    display: flex;
+    gap: 24px;
+    overflow: hidden;
+}
+
+/* --- Product Grid Area --- */
+.pos-products-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.pos-products-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 8px;
+    padding-bottom: 20px;
+}
+
+/* Search Bar Styling */
+.search-bar-wrapper {
+    background: var(--surface-bg);
+    border-radius: 12px;
+    padding: 4px;
+    box-shadow: 0 2px 10px rgba(62, 39, 35, 0.05);
+    border: 1px solid var(--border-color);
+}
+
+.pos-products-area .form-control:focus,
+.pos-products-area .form-select:focus {
+    border-color: var(--brand-light);
+    box-shadow: 0 0 0 0.25rem rgba(141, 110, 99, 0.25);
+}
+
+/* Product Card - Menu Style */
+.pos-card {
+    background: var(--surface-bg);
+    border: 1px solid rgba(93, 64, 55, 0.1);
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    height: 100%;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+
+    .pos-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(62, 39, 35, 0.12);
+        border-color: var(--brand-light);
+    }
+
+    .pos-card:active {
+        transform: scale(0.98);
+    }
+
+.pos-card-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: space-between;
+}
+
+/* Typography */
+.pos-title {
+    font-weight: 700;
+    color: var(--brand-dark);
+    font-size: 1rem;
+    margin-bottom: 4px;
+    line-height: 1.2;
+}
+
+.pos-price {
+    color: var(--brand-primary); /* Using brand-primary for price */
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 0;
+}
+
+.pos-badge {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--brand-dark);
+    background: var(--app-bg);
+    padding: 4px 8px;
+    border-radius: 6px;
+    align-self: flex-start;
+    margin-top: 12px;
+    font-weight: 600;
+}
+
+/* --- Cart Sidebar Overrides --- */
+.pos-sidebar {
+    width: 400px;
+    background: var(--surface-bg);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(62, 39, 35, 0.08);
+    border: 1px solid rgba(93, 64, 55, 0.1);
+}
+
+    .pos-sidebar .cart-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--brand-dark);
+        color: white;
+        border-radius: 18px 18px 0 0;
+    }
+
+    .pos-sidebar .cart-items {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0;
+        background-color: #fffaf8; /* Very subtle tint */
+    }
+
+    .pos-sidebar .cart-item {
+        display: flex;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(93, 64, 55, 0.05);
+        transition: background 0.2s;
+    }
+
+        .pos-sidebar .cart-item:hover {
+            background: white;
+        }
+
+    .pos-sidebar .cart-item-title {
+        font-weight: 600;
+        color: var(--brand-dark);
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    .pos-sidebar .cart-item-price {
+        font-size: 0.85rem;
+        color: var(--brand-light);
+    }
+
+    /* Quantity Controls */
+    .pos-sidebar .cart-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: white;
+        border: 1px solid #e0e0e0;
+        padding: 4px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+
+    .pos-sidebar .btn-qty {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: var(--app-bg);
+        color: var(--brand-dark);
+        border-radius: 6px;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+        .pos-sidebar .btn-qty:hover {
+            background: var(--brand-light);
+            color: var(--brand-dark);
+        }
+
+    .pos-sidebar .qty-display {
+        font-weight: 700;
+        font-size: 0.95rem;
+        min-width: 24px;
+        text-align: center;
+        color: var(--brand-dark);
+    }
+
+    /* Footer & Buttons */
+    .pos-sidebar .cart-footer {
+        padding: 24px;
+        background: var(--surface-bg);
+        border-top: 1px solid rgba(93, 64, 55, 0.1);
+        border-radius: 0 0 18px 18px;
+    }
+
+.btn-check:checked + .btn-outline-coffee {
+    background-color: var(--brand-primary);
+    color: white;
+    border-color: var(--brand-primary);
+}
+
+.btn-outline-coffee {
+    color: var(--brand-primary);
+    border-color: var(--brand-primary);
+}
+
+    .btn-outline-coffee:hover {
+        background-color: var(--app-bg);
+        color: var(--brand-dark);
+    }
+
+.pos-sidebar .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--brand-dark);
+}
+
+.btn-checkout {
+    background: var(--brand-dark);
+    border: none;
+    color: white;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(62, 39, 35, 0.3);
+}
+
+    .btn-checkout:hover {
+        background: var(--brand-primary);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(62, 39, 35, 0.4);
+    }
+
+    .btn-checkout:disabled {
+        background: #aca19f;
+        box-shadow: none;
+    }
+
+/* Scrollbar Override for POS specific areas */
+.pos-products-scroll::-webkit-scrollbar,
+.pos-sidebar .cart-items::-webkit-scrollbar {
+    width: 6px;
+}
+
+.pos-products-scroll::-webkit-scrollbar-track,
+.pos-sidebar .cart-items::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.pos-products-scroll::-webkit-scrollbar-thumb,
+.pos-sidebar .cart-items::-webkit-scrollbar-thumb {
+    background: var(--brand-light);
+    border-radius: 10px;
+}
+
+    .pos-products-scroll::-webkit-scrollbar-thumb:hover,
+    .pos-sidebar .cart-items::-webkit-scrollbar-thumb:hover {
+        background: var(--brand-primary);
+    }
+
+.main-wrapper {
+    display: flex;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+/* SIDEBAR TRANSITION OVERRIDES */
+.sidebar-desktop {
+    /* Use your existing width variable or fixed 260px */
+    width: 260px;
+    min-height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    transition: width 0.25s ease, left 0.25s ease;
+    /* Ensure it sits above content but below modals */
+    z-index: 1020;
+}
+
+/* MAIN CONTENT ADJUSTMENT */
+.content-main {
+    /* Push content to the right of the fixed sidebar */
+    margin-left: 260px;
+    /* Add top margin for the new top navbar */
+    padding-top: 80px;
+    width: calc(100% - 260px);
+    transition: margin-left 0.25s ease, width 0.25s ease;
+}
+
+/* === TOP NAVBAR STYLES === */
+.top-navbar {
+    height: 64px;
+    background-color: var(--surface-bg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    position: fixed;
+    top: 0;
+    right: 0;
+    /* Matches content width */
+    left: 260px;
+    z-index: 1010;
+    transition: left 0.25s ease;
+}
+
+/* === COLLAPSED STATE (Toggled via JS) === */
+body.sb-sidenav-toggled .sidebar-desktop {
+    width: 70px;
+}
+
+body.sb-sidenav-toggled .content-main {
+    margin-left: 70px;
+    width: calc(100% - 70px);
+}
+
+body.sb-sidenav-toggled .top-navbar {
+    left: 70px;
+}
+
+/* Hide text when collapsed */
+body.sb-sidenav-toggled .brand-text,
+body.sb-sidenav-toggled .nav-label,
+body.sb-sidenav-toggled .nav-link span {
+    display: none;
+}
+
+/* Center Icons in Collapsed Sidebar */
+body.sb-sidenav-toggled .sidebar-header {
+    padding: 20px 0;
+    justify-content: center;
+}
+
+body.sb-sidenav-toggled .brand-icon-box {
+    margin-right: 0;
+}
+
+body.sb-sidenav-toggled .nav-link {
+    justify-content: center;
+    padding: 12px 0;
+}
+
+    body.sb-sidenav-toggled .nav-link i {
+        margin-right: 0;
+        font-size: 1.2rem;
+    }
+
+/* Mobile Adjustment */
+@media (max-width: 768px) {
+    .sidebar-desktop {
+        display: none;
+    }
+    /* Use your existing mobile menu */
+    .content-main {
+        margin-left: 0;
+        width: 100%;
+        padding-top: 20px;
+    }
+
+    .top-navbar {
+        display: none;
+    }
+}
+<!-- === PRINT STYLES === -->
+
+@media print {
+    /* 1. Hide Everything Global */
+    body *
+
+{
+    visibility: hidden;
+}
+
+/* 2. Hide Specific Page Elements */
+.sidebar-desktop, .offcanvas, .top-navbar, .navbar,
+.btn-group, form, .btn, .d-print-none,
+.row.g-4.mb-5 /* Hides Stats Cards */ {
+    display: none !important;
+}
+
+/* 3. Show Only The Transaction Table Section */
+#transaction-table-card, #transaction-table-card * {
+    visibility: visible;
+}
+
+/* 4. Position the Table at the Top */
+#transaction-table-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* 5. Style Updates for Print Match */
+.card-header {
+    background: white !important;
+    padding-left: 0 !important;
+    border-bottom: none !important;
+}
+
+    .card-header h5 {
+        font-size: 24px;
+        font-weight: 800 !important;
+        color: #4F3422 !important;
+        margin-bottom: 20px;
+    }
+
+.table {
+    width: 100% !important;
+}
+
+th {
+    text-transform: uppercase;
+    font-weight: 800 !important;
+    font-size: 12px;
+    color: #000 !important;
+    border-bottom: 1px solid #eee !important;
+}
+
+td {
+    border-bottom: 1px solid #eee !important;
+    padding: 12px 5px !important;
+}
+
+/* Adjust Badge colors for print */
+.badge {
+    border: 1px solid #ddd !important;
+    color: #000 !important;
+}
+
+}
+
+.login-body {
+    height: 100vh;
+    overflow: hidden;
+    background-color: #fff;
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+}
+
+.login-wrapper {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+}
+
+/* --- Left Side: Brand Image --- */
+.login-brand-side {
+    flex: 1;
+    /* Reliable High-Quality Image from Unsplash */
+    background-image: url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=2070&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-brand-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* Dark, elegant overlay */
+    background: linear-gradient(135deg, rgba(35, 25, 20, 0.9), rgba(74, 52, 38, 0.8));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    padding: 40px;
+    text-align: center;
+}
+
+/* --- Right Side: Form Container --- */
+.login-form-side {
+    flex: 0 0 500px; /* Fixed width for the form area */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px;
+    background: white;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.05);
+    position: relative;
+    z-index: 10;
+}
+
+/* Mobile Responsive: Hide image on small screens */
+@media (max-width: 992px) {
+    .login-brand-side {
+        display: none;
+    }
+
+    .login-form-side {
+        flex: 1;
+        width: 100%;
+        padding: 40px;
+    }
+}
+
+/* --- Form Elements --- */
+.login-input-group {
+    border: 2px solid #f1f1f1;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+    .login-input-group:focus-within {
+        border-color: #8B5E3C; /* Brand Color */
+        box-shadow: 0 0 0 4px rgba(139, 94, 60, 0.1);
+    }
+
+    .login-input-group .input-group-text {
+        background: white;
+        border: none;
+        color: #8B5E3C;
+        padding-left: 20px;
+    }
+
+    .login-input-group .form-control {
+        border: none;
+        height: 50px;
+        padding-left: 15px;
+        background: white;
+        font-size: 0.95rem;
+    }
+
+        .login-input-group .form-control:focus {
+            box-shadow: none;
+        }
+
+/* --- Button --- */
+.btn-login-primary {
+    background-color: #4A3426; /* Dark Coffee */
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    margin-top: 10px;
+}
+
+    .btn-login-primary:hover {
+        background-color: #8B5E3C; /* Lighter Coffee */
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(139, 94, 60, 0.25);
+        color: white;
+    }
+
+.ingredients-page .inventory-container {
+    background-color: var(--surface-bg, #fff);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(62, 39, 35, 0.05);
+    padding: 24px;
+    border: 1px solid rgba(93, 64, 55, 0.08);
+}
+
+.ingredients-page .table-custom thead th {
+    background-color: var(--brand-dark, #4a3426);
+    color: white;
+    font-weight: 600;
+    border: none;
+    padding: 12px 16px;
+    white-space: nowrap;
+}
+
+.ingredients-page .table-custom thead th:first-child {
+    border-radius: 10px 0 0 10px;
+}
+
+.ingredients-page .table-custom thead th:last-child {
+    border-radius: 0 10px 10px 0;
+}
+
+.ingredients-page .table-custom tbody tr {
+    transition: background 0.2s;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.ingredients-page .table-custom tbody tr:hover {
+    background-color: #fffaf8;
+}
+
+.ingredients-page .table-custom td {
+    vertical-align: middle;
+    padding: 16px;
+    color: var(--brand-dark, #4a3426);
+}
+
+.ingredients-page .badge-stock {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ingredients-page .bg-low {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdd2;
+}
+
+.ingredients-page .bg-good {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
+.ingredients-page .btn-add-ingredient {
+    background-color: var(--brand-primary, #8B5E3C);
+    color: white;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 600;
+    border: none;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ingredients-page .btn-add-ingredient:hover {
+    background-color: var(--brand-dark, #4a3426);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.ingredients-page .small-muted {
+    color: #6c6c6c;
+    font-size: 0.85rem;
+}
+
+.ingredients-page .currency {
+    font-weight: 700;
+    color: var(--brand-dark, #4a3426);
+}
+
+.ingredients-page .total-value {
+    font-weight: 800;
+    color: #4a3426;
+}
+
+/* Modal tweaks */
+.ingredients-page .modal .modal-header.bg-light {
+    background: #fbfbfb;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .ingredients-page .table-custom td, 
+    .ingredients-page .table-custom th {
+        padding: 10px;
+        font-size: 0.92rem;
+    }
+
+    .ingredients-page .btn-add-ingredient {
+        padding: 8px 14px;
+    }
+}
+
+Here are the updated files. I have stripped the inline CSS from the Razor view, moved all styling to site.css, and refined the design to be cleaner, using the "Coffee" color palette defined in your root variables.
+
+1. Update site.css
+Append the following code to the bottom of your existing site.css file. This adds a dedicated "Analytics Dashboard" section.
+
+CSS
+/* ... [Keep all your existing code above this line] ... */
+/* =================================================================
+   4. Analytics Dashboard (Modern & Professional)
+   ================================================================= */
+/* --- Layout & Typography --- */
+.dashboard-container {
+    padding: 1.5rem 0;
+}
+
+.dashboard-header {
+    margin-bottom: 2rem;
+}
+
+.dashboard-title {
+    font-weight: 700;
+    color: var(--brand-dark);
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* --- KPI Cards --- */
+.kpi-card {
+    background: var(--surface-bg);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    height: 100%;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(79, 52, 34, 0.1);
+    }
+
+    /* Accent Borders (Left indicators) */
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+    }
+
+.kpi-primary::before {
+    background-color: var(--brand-primary);
+}
+
+.kpi-light::before {
+    background-color: var(--brand-light);
+}
+
+.kpi-dark::before {
+    background-color: var(--brand-dark);
+}
+
+.kpi-coffee::before {
+    background-color: #5D4037;
+}
+
+/* KPI Content */
+.kpi-content-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.kpi-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.kpi-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--brand-dark);
+    line-height: 1.2;
+    margin: 0;
+}
+
+    .kpi-value.text-white {
+        color: #fff !important;
+    }
+
+/* KPI Icons */
+.kpi-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+/* Icon Color Variants */
+.icon-primary {
+    background-color: rgba(141, 91, 76, 0.1);
+    color: var(--brand-primary);
+}
+
+.icon-light {
+    background-color: rgba(208, 180, 159, 0.15);
+    color: #BCAAA4;
+}
+
+.icon-dark {
+    background-color: rgba(79, 52, 34, 0.1);
+    color: var(--brand-dark);
+}
+
+.icon-coffee {
+    background-color: #ECEFF1;
+    color: #5D4037;
+}
+
+.icon-glass {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* KPI Footer badges */
+.kpi-footer {
+    margin-top: 20px;
+}
+
+.badge-kpi {
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+/* Specific Dark Card Override */
+.kpi-card-dark {
+    background: linear-gradient(145deg, #4F3422, #3E2723);
+    color: white;
+    border: none;
+}
+
+    .kpi-card-dark .kpi-label {
+        color: rgba(255,255,255,0.6);
+    }
+
+/* --- Chart Cards --- */
+.chart-card {
+    background: var(--surface-bg);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    height: 100%;
+    border: 1px solid var(--border-color);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.chart-title {
+    font-weight: 700;
+    color: var(--brand-dark);
+    font-size: 1.1rem;
+}
+
+.chart-badge {
+    background: #f1efec;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.chart-container-lg {
+    height: 320px;
+    position: relative;
+    width: 100%;
+}
+
+.chart-container-sm {
+    height: 260px;
+    position: relative;
+    width: 100%;
+}
+
+/* --- Forecast Table Section --- */
+.forecast-card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    overflow: hidden;
+}
+
+.forecast-header {
+    background: white;
+    padding: 24px;
+    border-bottom: 1px solid rgba(0,0,0,0.03);
+}
+
+.forecast-title-group h5 {
+    font-weight: 700;
+    color: var(--brand-dark);
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.forecast-table-responsive {
+    padding: 0 24px 24px 24px;
+    background: white;
+}
+
+.table-forecast {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px; /* Creates spacing between rows */
+}
+
+    .table-forecast thead th {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        letter-spacing: 0.5px;
+        border: none;
+        padding: 10px 16px;
+        font-weight: 600;
+    }
+
+    .table-forecast tbody tr {
+        transition: transform 0.2s;
+    }
+
+        .table-forecast tbody tr:hover td {
+            background-color: #fffaf8;
+            transform: scale(1.01);
+        }
+
+    .table-forecast td {
+        background-color: #fff;
+        border-top: 1px solid #f3f3f3;
+        border-bottom: 1px solid #f3f3f3;
+        padding: 16px;
+        vertical-align: middle;
+        color: var(--text-primary);
+    }
+
+        .table-forecast td:first-child {
+            border-left: 1px solid #f3f3f3;
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+
+        .table-forecast td:last-child {
+            border-right: 1px solid #f3f3f3;
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+
+.forecast-trend-badge {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: #f5f5f5;
+    color: var(--text-secondary);
+    border: 1px solid #e0e0e0;
+}
+
+.forecast-val-tomorrow {
+    font-weight: 700;
+    color: var(--brand-primary);
+    font-size: 1.05rem;
+}
+
+.forecast-val-week {
+    font-weight: 600;
+    color: var(--brand-dark);
+}
+
+.forecast-val-month {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.insight-box {
+    background: rgba(208, 180, 159, 0.1); /* brand-light low opacity */
+    border-radius: 10px;
+    padding: 16px;
+    margin: 0 24px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid rgba(208, 180, 159, 0.3);
+}
+
+.insight-icon {
+    font-size: 1.5rem;
+    color: var(--brand-primary);
+}
+
+.sh-container {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.sh-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.sh-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--brand-dark); /* Matches your coffee brand */
+    margin: 0;
+}
+
+/* --- Controls (Date Picker Mockup) --- */
+.sh-controls {
+    display: flex;
+    gap: 12px;
+}
+
+.sh-btn-secondary {
+    background: white;
+    border: 1px solid #dcdcdc; /* Subtle border like Shopify */
+    color: var(--brand-dark);
+    padding: 8px 16px;
+    border-radius: 8px; /* Slightly sharper corners */
+    font-weight: 600;
+    font-size: 0.85rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+    .sh-btn-secondary:hover {
+        background: #fcfcfc;
+        border-color: #c0c0c0;
+    }
+
+/* --- Cards --- */
+.sh-card {
+    background: white;
+    border: 1px solid #e1e3e5; /* The classic SaaS border */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03); /* Very subtle shadow */
+    border-radius: 12px;
+    padding: 20px;
+    height: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- Metrics (KPIs) --- */
+.sh-metric-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sh-metric-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--brand-dark);
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+}
+
+.sh-metric-footer {
+    font-size: 0.8rem;
+    color: #6D7175; /* Shopify gray */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: auto; /* Pushes to bottom */
+}
+
+/* Specific icons for context */
+.sh-icon-subtle {
+    color: #babfc3;
+    font-size: 1rem;
+}
+
+/* --- Tables (Clean & Minimal) --- */
+.sh-table-wrapper {
+    overflow-x: auto;
+}
+
+.sh-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    .sh-table th {
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        padding: 12px 16px;
+        border-bottom: 1px solid #e1e3e5;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .sh-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid #f1f2f3;
+        color: var(--brand-dark);
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+
+    .sh-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .sh-table tr:hover td {
+        background-color: #fafbfb;
+    }
+
+/* --- Forecasting Section Styles --- */
+.sh-forecast-trend {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.trend-up {
+    background: #e3f1df;
+    color: #206b36;
+}
+/* Green */
+.trend-flat {
+    background: #f6f6f7;
+    color: #5c5f62;
+}
+/* Gray */
+
+/* --- Chart Areas --- */
+.sh-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.sh-chart-title {
+    font-weight: 700;
+    color: var(--brand-dark);
+    font-size: 1rem;
+}
+
+.sh-chart-canvas-lg {
+    height: 300px;
+    width: 100%;
+}
+
+.sh-chart-canvas-sm {
+    height: 200px;
+    width: 100%;
+}
+
+.pos-category-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 4px 4px 16px 4px; /* Bottom padding for scrollbar/shadow space */
+    margin-bottom: 16px;
+    scrollbar-width: none; /* Hide scrollbar Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar IE */
+}
+
+    .pos-category-scroll::-webkit-scrollbar {
+        display: none; /* Hide scrollbar Chrome/Safari */
+    }
+
+/* Individual Tab Buttons */
+.btn-cat-tab {
+    background: white;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 10px 24px;
+    border-radius: 50px; /* Pill shape */
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+    .btn-cat-tab:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-1px);
+    }
+
+    /* Active State (Coffee Brand Color) */
+    .btn-cat-tab.active {
+        background-color: var(--brand-dark);
+        color: white;
+        border-color: var(--brand-dark);
+        box-shadow: 0 4px 10px rgba(79, 52, 34, 0.3);
+    }
+
+/* Hide elements utility for filtering */
+.d-none-filtered {
+    display: none !important;
+}
+
+/* =============================================================
+   91 CAFE POS — UI Enhancements & Responsive Fixes (2025 Update)
+   ============================================================= */
+
+/* --- GLOBAL IMPROVEMENTS --- */
+html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+
+/* Improve default scrollbars */
+*::-webkit-scrollbar {
+    width: 6px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.15);
+    border-radius: 4px;
+}
+
+    *::-webkit-scrollbar-thumb:hover {
+        background: rgba(0,0,0,0.3);
+    }
+
+/* Ensure all cards use consistent shadow */
+.card, .product-card, .inventory-card, .order-ticket {
+    transition: box-shadow .2s ease, transform .2s ease;
+}
+
+    .card:hover, .product-card:hover, .inventory-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+    }
+
+/* Smooth transitions */
+.nav-link, .btn, .sidebar-desktop, .content-main {
+    transition: all .25s ease !important;
+}
+
+/* -------------------------------------------------------------
+   SIDEBAR + NAV FIXES
+------------------------------------------------------------- */
+
+/* Fix sidebar on smaller laptops */
+@media (max-width: 1200px) {
+    .sidebar-desktop {
+        width: 220px;
+    }
+
+    .content-main {
+        margin-left: 220px;
+        width: calc(100% - 220px);
+    }
+
+    .top-navbar {
+        left: 220px;
+    }
+}
+
+/* Auto-collapse on tablets */
+@media (max-width: 991px) {
+    body.sb-sidenav-toggled .sidebar-desktop {
+        left: -260px;
+    }
+}
+
+/* Remove double scroll on content */
+.content-main {
+    height: auto;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* -------------------------------------------------------------
+   MOBILE RESPONSIVENESS FIX
+------------------------------------------------------------- */
+
+/* Mobile Sidebar Toggle Behavior */
+@media (max-width: 768px) {
+    .sidebar-desktop {
+        display: block;
+        position: fixed;
+        width: 240px;
+        left: -240px;
+        top: 0;
+        height: 100vh;
+        z-index: 2000;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.25);
+    }
+
+    body.mobile-sidebar-open .sidebar-desktop {
+        left: 0;
+    }
+
+    /* Dimming backdrop */
+    body.mobile-sidebar-open::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 1500;
+    }
+
+    /* Content becomes full width */
+    .content-main {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding-top: 85px;
+    }
+
+    /* Hide the desktop navbar */
+    .top-navbar {
+        left: 0 !important;
+        width: 100% !important;
+    }
+}
+
+/* -------------------------------------------------------------
+   SALES PAGE GRID FIXES
+------------------------------------------------------------- */
+
+.sales-layout {
+    flex-wrap: wrap;
+}
+
+@media (max-width: 992px) {
+    .sales-sidebar-container {
+        width: 100%;
+        order: 2;
+    }
+
+    .sales-grid-container {
+        width: 100%;
+        order: 1;
+    }
+}
+
+/* Better product grid on phones */
+@media (max-width: 600px) {
+    .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+}
+
+/* -------------------------------------------------------------
+   POS LAYOUT FIXES
+------------------------------------------------------------- */
+
+.pos-container {
+    height: auto;
+    flex-direction: column;
+    padding-bottom: 40px;
+}
+
+@media (min-width: 992px) {
+    .pos-container {
+        flex-direction: row;
+        height: calc(100vh - 100px);
+        overflow: hidden;
+    }
+}
+
+/* POS Sidebar fluid on mobile */
+@media (max-width: 768px) {
+    .pos-sidebar {
+        width: 100% !important;
+        border-radius: 16px;
+        margin-top: 20px;
+    }
+}
+
+/* -------------------------------------------------------------
+   LOGIN PAGE POLISH + PHONE FIX
+------------------------------------------------------------- */
+
+.login-wrapper {
+    flex-direction: row;
+}
+
+@media (max-width: 768px) {
+    .login-wrapper {
+        flex-direction: column;
+    }
+
+    .login-form-side {
+        padding: 30px !important;
+        width: 100%;
+    }
+}
+
+/* Sharper form visuals */
+.login-input-group {
+    background: #fff;
+    border-radius: 10px;
+}
+
+/* -------------------------------------------------------------
+   INVENTORY PAGE FIXES
+------------------------------------------------------------- */
+
+.inventory-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+@media (max-width: 480px) {
+    .inventory-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Improve badge contrast */
+.inventory-category-badge {
+    background: rgba(208, 180, 159, 0.4);
+}
+
+/* -------------------------------------------------------------
+   PRINT FIXES
+------------------------------------------------------------- */
+
+@media print {
+    html, body {
+        overflow: visible !important;
+    }
+
+    .content-main {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+}
+

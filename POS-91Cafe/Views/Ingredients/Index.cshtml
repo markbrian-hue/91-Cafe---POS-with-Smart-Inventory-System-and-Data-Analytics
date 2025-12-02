@@ -1,0 +1,305 @@
+﻿@model IEnumerable<POS_91Cafe.ViewModels.IngredientViewModel>
+@{
+    ViewData["Title"] = "Ingredients Inventory";
+}
+
+<div class="sh-container">
+
+    <!-- 1. Header Area -->
+    <div class="sh-header">
+        <div>
+            <h1 class="sh-title">Ingredients Inventory</h1>
+            <p class="text-muted mb-0" style="font-size: 0.9rem;">Manage stock for coffee beans, milk, syrups, and supplies.</p>
+        </div>
+        <button class="sh-btn-secondary btn-primary text-white" style="background-color: var(--brand-dark); border:none;"
+                data-bs-toggle="modal" data-bs-target="#ingredientModal" data-id="0">
+            <i class="fas fa-plus me-2"></i>Add Ingredient
+        </button>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success border-0 shadow-sm mb-4 d-flex align-items-center" style="background-color: #e8f5e9; color: #1b5e20;">
+            <i class="fas fa-check-circle me-2"></i> @TempData["SuccessMessage"]
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger border-0 shadow-sm mb-4 d-flex align-items-center" style="background-color: #ffebee; color: #c62828;">
+            <i class="fas fa-exclamation-circle me-2"></i> @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <!-- 2. Main Content Card -->
+    <div class="sh-card" style="padding: 0; overflow: hidden;">
+
+        <!-- Filter Toolbar -->
+        <div class="p-3 border-bottom bg-light">
+            <div class="d-flex align-items-center" style="max-width: 400px;">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                    <input type="text" id="ingredientSearch" class="form-control border-start-0" placeholder="Search ingredients...">
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="sh-table-wrapper">
+            <table class="sh-table table-hover">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Ingredient Name</th>
+                        <th>Current Stock</th>
+                        <th>Status</th>
+                        <th>Unit Cost</th>
+                        <th>Cost per Unit</th>
+                        <th>Total Value</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="ingredientsTableBody">
+                    @foreach (var item in Model)
+                    {
+                        var isLowStock = item.Status?.ToLower().Contains("low") ?? false;
+                        <tr>
+                            <td class="ps-4 fw-bold text-dark">@item.Name</td>
+                            <td>
+                                <div class="d-flex align-items-baseline gap-1">
+                                    <span class="fw-bold @(isLowStock ? "text-danger" : "text-dark")" style="font-size: 1rem;">
+                                        @item.CurrentQuantity.ToString("0.##")
+                                    </span>
+                                    <span class="text-muted small text-uppercase">@item.Unit</span>
+                                </div>
+                            </td>
+                            <td>
+                                @if (isLowStock)
+                                {
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-2">Low Stock</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2">Good</span>
+                                }
+                            </td>
+                            <td class="text-muted">@item.CostPriceDisplay</td>
+                            <td>
+                                <span class="text-dark">@item.CostPerStoredUnitDisplay</span>
+                                <small class="text-muted" style="font-size: 0.75rem;"> / @item.Unit</small>
+                            </td>
+                            <td class="fw-bold text-dark">@item.TotalValueDisplay</td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-light text-secondary border-0"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#ingredientModal"
+                                        data-id="@item.IngredientID"
+                                        data-name="@item.Name"
+                                        data-quantity="@item.CurrentQuantity"
+                                        data-unit="@item.Unit"
+                                        data-cost="@item.CostPrice"
+                                        data-threshold="@item.LowStockThreshold"
+                                        title="Edit">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+
+                                <form asp-action="Delete" asp-route-id="@item.IngredientID" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete @item.Name?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-light text-danger border-0 ms-1" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Modal (Cleaned up) -->
+<div class="modal fade" id="ingredientModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header bg-white border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark" id="modalTitle">Add Ingredient</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form asp-controller="Ingredients" asp-action="Save" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4 pt-3">
+                    <input type="hidden" name="IngredientID" id="IngredientID" value="0" />
+
+                    <div class="mb-3">
+                        <label class="form-label small text-muted fw-bold text-uppercase">Name</label>
+                        <input type="text" name="Name" id="Name" class="form-control" placeholder="e.g. Arabica Beans" required />
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small text-muted fw-bold text-uppercase">Current Stock</label>
+                            <input type="number" step="0.01" name="CurrentQuantity" id="CurrentQuantity" class="form-control" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-muted fw-bold text-uppercase">Unit</label>
+                            <select name="Unit" id="Unit" class="form-select" required>
+                                <option value="g">grams (g)</option>
+                                <option value="kg">kilograms (kg)</option>
+                                <option value="ml">milliliters (ml)</option>
+                                <option value="l">liters (L)</option>
+                                <option value="pcs">pieces (pcs)</option>
+                                <option value="btl">bottles (btl)</option>
+                                <option value="other">Other...</option>
+                            </select>
+                            <input type="text" name="UnitOther" id="UnitOther" class="form-control mt-2 d-none" placeholder="Specify unit" />
+                        </div>
+                    </div>
+
+                    <div class="card bg-light border-0 p-3 mb-3">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-6">
+                                <label class="form-label small text-muted fw-bold text-uppercase">Cost (₱)</label>
+                                <input type="number" step="0.01" name="CostPrice" id="CostPrice" class="form-control" required />
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="IsPackagePrice" name="IsPackagePrice" />
+                                    <label class="form-check-label small text-muted" for="IsPackagePrice">Is Package Price?</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Package Details (Hidden by default via JS logic) -->
+                        <div id="packageDetails" class="row g-3 mt-1" style="display:none;">
+                            <div class="col-12">
+                                <small class="text-primary d-block mb-2">Package Details (for auto-calculation)</small>
+                            </div>
+                            <div class="col-6">
+                                <input type="number" step="0.01" name="PackageQuantity" id="PackageQuantity" class="form-control form-control-sm" placeholder="Qty (e.g. 500)" />
+                            </div>
+                            <div class="col-6">
+                                <select name="PackageUnit" id="PackageUnit" class="form-select form-select-sm">
+                                    <option value="">Same as Unit</option>
+                                    <option value="g">grams (g)</option>
+                                    <option value="kg">kilograms (kg)</option>
+                                    <option value="ml">milliliters (ml)</option>
+                                    <option value="l">liters (L)</option>
+                                    <option value="pcs">pieces</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label small text-muted fw-bold text-uppercase">Low Stock Alert At</label>
+                        <input type="number" step="0.01" name="LowStockThreshold" id="LowStockThreshold" class="form-control" value="5" required />
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light text-muted" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4" style="background-color: var(--brand-dark); border:none;">Save Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Search
+        document.getElementById('ingredientSearch').addEventListener('keyup', function() {
+            let value = this.value.toLowerCase();
+            let rows = document.querySelectorAll('#ingredientsTableBody tr');
+            rows.forEach(row => {
+                let text = row.textContent.toLowerCase();
+                row.style.display = text.indexOf(value) > -1 ? '' : 'none';
+            });
+        });
+
+        // Toggle Package Details visibility
+        document.getElementById('IsPackagePrice').addEventListener('change', function() {
+            var details = document.getElementById('packageDetails');
+            if (this.checked) {
+                details.style.display = 'flex';
+                document.getElementById('PackageQuantity').focus();
+            } else {
+                details.style.display = 'none';
+            }
+        });
+
+        // Modal handling
+        var ingredientModal = document.getElementById('ingredientModal');
+        ingredientModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var id = button ? button.getAttribute('data-id') : null;
+            var name = button ? button.getAttribute('data-name') : null;
+            var qty = button ? button.getAttribute('data-quantity') : null;
+            var unit = button ? button.getAttribute('data-unit') : null;
+            var cost = button ? button.getAttribute('data-cost') : null;
+            var thresh = button ? button.getAttribute('data-threshold') : null;
+
+            var modalTitle = ingredientModal.querySelector('.modal-title');
+            var idInput = ingredientModal.querySelector('#IngredientID');
+            var nameInput = ingredientModal.querySelector('#Name');
+            var qtyInput = ingredientModal.querySelector('#CurrentQuantity');
+            var unitSelect = ingredientModal.querySelector('#Unit');
+            var unitOther = ingredientModal.querySelector('#UnitOther');
+            var costInput = ingredientModal.querySelector('#CostPrice');
+            var threshInput = ingredientModal.querySelector('#LowStockThreshold');
+
+            // Reset Package fields on open
+            document.getElementById('IsPackagePrice').checked = false;
+            document.getElementById('packageDetails').style.display = 'none';
+            document.getElementById('PackageQuantity').value = '';
+            document.getElementById('PackageUnit').value = '';
+
+            if (id && id !== '0') {
+                modalTitle.textContent = 'Edit Ingredient';
+                idInput.value = id;
+                nameInput.value = name ?? '';
+                qtyInput.value = qty ?? '';
+
+                if (unit) {
+                    var opt = Array.from(unitSelect.options).find(o => o.value.toLowerCase() === unit.toLowerCase());
+                    if (opt) {
+                        unitSelect.value = opt.value;
+                        unitOther.classList.add('d-none');
+                    } else {
+                        unitSelect.value = 'other';
+                        unitOther.classList.remove('d-none');
+                        unitOther.value = unit;
+                    }
+                } else {
+                    unitSelect.value = 'g';
+                    unitOther.classList.add('d-none');
+                    unitOther.value = '';
+                }
+
+                costInput.value = cost ?? '';
+                threshInput.value = thresh ?? threshInput.value ?? '5';
+            } else {
+                modalTitle.textContent = 'Add New Ingredient';
+                idInput.value = '0';
+                nameInput.value = '';
+                qtyInput.value = '';
+                unitSelect.value = 'g';
+                unitOther.classList.add('d-none');
+                unitOther.value = '';
+                costInput.value = '';
+                threshInput.value = '5';
+            }
+        });
+
+        // Toggle UnitOther input
+        document.getElementById('Unit').addEventListener('change', function() {
+            var other = document.getElementById('UnitOther');
+            if (this.value === 'other') other.classList.remove('d-none');
+            else {
+                other.classList.add('d-none');
+                other.value = '';
+            }
+        });
+    </script>
+}

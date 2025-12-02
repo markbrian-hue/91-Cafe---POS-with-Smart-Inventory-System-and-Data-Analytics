@@ -1,0 +1,569 @@
+﻿@model POS_91Cafe.ViewModels.SalesViewModel
+@{
+    ViewData["Title"] = "Point of Sale";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* Embedded styles to ensure tabs look correct immediately */
+    .btn-cat-tab {
+        background: white;
+        border: 1px solid #e0e0e0;
+        color: #6c757d;
+        padding: 8px 20px;
+        border-radius: 50px; /* Pill shape */
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+
+        .btn-cat-tab:hover {
+            background: #f8f9fa;
+            transform: translateY(-1px);
+        }
+
+        .btn-cat-tab.active {
+            background-color: #4F3422; /* Brand Dark Coffee */
+            color: white;
+            border-color: #4F3422;
+            box-shadow: 0 4px 6px rgba(79, 52, 34, 0.2);
+        }
+</style>
+
+<div class="container-fluid py-3">
+    @Html.AntiForgeryToken()
+
+    <div class="pos-container">
+
+        <!-- Left Side: Menu -->
+        <div class="pos-products-area">
+
+            <!-- Search Bar Area -->
+            <div class="d-flex gap-3 mb-3 align-items-center">
+                <div class="search-bar-wrapper flex-grow-1 d-flex align-items-center px-3">
+                    <i class="fas fa-search text-muted me-2"></i>
+                    <input type="text" id="productSearch" class="form-control border-0 shadow-none bg-transparent p-2" placeholder="Search menu...">
+                </div>
+            </div>
+
+            <!-- Category Tabs (Updated to Wrap instead of Scroll) -->
+            <div class="px-1 mb-3">
+                <div class="d-flex flex-wrap gap-2" id="categoryTabs">
+                    <!-- 'All' Button -->
+                    <button class="btn-cat-tab active" onclick="filterCategory('All', this)">
+                        <i class="fas fa-th-large me-2"></i>All
+                    </button>
+
+                    <!-- Dynamic Categories from Database -->
+                    @foreach (var cat in Model.Categories.OrderBy(c => c.Name))
+                    {
+                        <button class="btn-cat-tab" onclick="filterCategory('@cat.Name', this)">
+                            @cat.Name
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="pos-products-scroll">
+                <div id="productsGrid" class="product-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; padding-bottom: 20px;">
+                    @foreach (var group in Model.ProductGroups.OrderBy(g => g.BaseName))
+                    {
+                        // Build distinct variations
+                        var distinctVariations = group.Products
+                        .Select(p => new
+                        {
+                            Product = p,
+                            SizeKey = (p.Name?.Contains("(") ?? false)
+                        ? p.Name.Substring(p.Name.LastIndexOf("(") + 1).TrimEnd(')').Trim().ToLower()
+                        : (string.IsNullOrWhiteSpace(p.Unit) || p.Unit.ToLower() == "pc" ? "standard" : p.Unit.ToLower()),
+                            // Calculate Max Stock for this specific product variant
+                            MaxStock = (p.ProductIngredients != null && p.ProductIngredients.Any())
+                        ? (int)p.ProductIngredients.Min(pi => pi.Ingredient != null && pi.QuantityUsed > 0
+                        ? pi.Ingredient.CurrentQuantity / pi.QuantityUsed
+                        : 9999)
+                        : 9999
+                        })
+                        .GroupBy(x => new { Price = x.Product.SellingPrice, Size = x.SizeKey })
+                        .Select(gv => gv.First()) // Select the wrapper object, not just product
+                        .OrderBy(v => v.Product.SellingPrice)
+                        .ToList();
+
+                        var firstItem = distinctVariations.First();
+                        var firstProduct = firstItem.Product;
+                        var categoryName = firstProduct.Category?.Name ?? "General";
+                        var isGroup = distinctVariations.Count > 1;
+
+                        // Serialize with MaxStock included
+                        var variationsJson = System.Text.Json.JsonSerializer.Serialize(distinctVariations.Select(v => new
+                        {
+                            id = v.Product.ProductID,
+                            name = v.Product.Name,
+                            unit = (!string.IsNullOrWhiteSpace(v.Product.Unit) && v.Product.Unit.ToLower() != "pc")
+                        ? v.Product.Unit
+                        : (v.Product.Name.Contains("(") ? v.Product.Name.Substring(v.Product.Name.LastIndexOf("(") + 1).Trim(')') : "Standard"),
+                            price = v.Product.SellingPrice,
+                            maxStock = v.MaxStock // <--- NEW: Send max stock to frontend
+                        }));
+
+                        <div class="pos-card product-wrapper"
+                             onclick="@(isGroup ? "openSizeModal(this)" : "addToCartSimple(this)")"
+                             data-base-name="@group.BaseName.ToLower()"
+                             data-category="@categoryName"
+                             data-is-group="@isGroup.ToString().ToLower()"
+                             data-id="@firstProduct.ProductID"
+                             data-name="@firstProduct.Name"
+                             data-price="@firstProduct.SellingPrice"
+                             data-max-stock="@firstItem.MaxStock"
+                             data-variations='@variationsJson'>
+
+                            <div class="pos-card-body">
+                                <div>
+                                    <h6 class="pos-title">@group.BaseName</h6>
+                                    <div class="d-flex align-items-end justify-content-between mt-2">
+                                        @if (isGroup)
+                                        {
+                                            <p class="pos-price text-muted small mb-0">
+                                                from <span style="color: var(--brand-primary); font-weight:800; font-size:1.1rem;">₱@distinctVariations.Min(v => v.Product.SellingPrice).ToString("F0")</span>
+                                            </p>
+                                        }
+                                        else
+                                        {
+                                            <p class="pos-price">₱@firstProduct.SellingPrice.ToString("F0")</p>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <span class="pos-badge">@categoryName</span>
+                                </div>
+                            </div>
+                            <!-- Disable clicks if single item is out of stock -->
+                            @if (!isGroup && firstItem.MaxStock <= 0)
+                            {
+                                <div style="position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.6); cursor: not-allowed;"></div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div id="emptySearchState" class="text-center py-5" style="display: none; color: var(--brand-light);">
+                    <i class="fas fa-mug-hot fa-3x mb-3 opacity-50"></i>
+                    <p>No menu items found.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Order Ticket -->
+        <div class="pos-sidebar">
+            <div class="cart-header">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-receipt me-2"></i>
+                    <h5 class="mb-0 fw-bold">Current Order</h5>
+                </div>
+                <span class="badge bg-white text-dark rounded-pill px-3" id="cart-count">0</span>
+            </div>
+
+            <div class="cart-items" id="cart-items-container">
+                <!-- Filled via JS -->
+            </div>
+
+            <div class="cart-footer">
+                <div class="mb-3">
+                    <label class="form-label small text-muted fw-bold text-uppercase mb-2">Payment Method</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="paymentMethod" id="payCash" value="Cash" checked onchange="toggleCashInput()">
+                        <label class="btn btn-outline-coffee py-2" for="payCash"><i class="fas fa-money-bill-wave me-2"></i> Cash</label>
+
+                        <input type="radio" class="btn-check" name="paymentMethod" id="payDigital" value="GCash/Paymaya" onchange="toggleCashInput()">
+                        <label class="btn btn-outline-coffee py-2" for="payDigital"><i class="fas fa-qrcode me-2"></i> Gcash/Maya</label>
+                    </div>
+                </div>
+
+                <div id="cash-calculator-section">
+                    <label class="form-label small text-muted fw-bold text-uppercase">Cash Received</label>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text bg-white border-end-0 text-muted">₱</span>
+                        <input type="number" id="amountReceived" class="form-control border-start-0 form-control-lg fw-bold" placeholder="0.00" oninput="calculateChange()">
+                    </div>
+                </div>
+
+                <div class="total-row mb-2">
+                    <span>Total Amount</span>
+                    <span id="cart-total-val">₱0.00</span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4" id="change-row">
+                    <span class="text-muted">Change</span>
+                    <span id="change-val" class="fw-bold text-secondary" style="font-size: 1.1rem;">₱0.00</span>
+                </div>
+
+                <button id="process-sale-btn" class="btn btn-checkout w-100 py-3" onclick="processSale()">
+                    COMPLETE ORDER <i class="fas fa-arrow-right ms-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Size Selection -->
+<div class="modal fade" id="sizeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header border-0 pb-0 bg-white">
+                <h5 class="modal-title fw-bold" id="sizeModalTitle" style="color: var(--brand-dark);">Select Size</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-3 pb-4 bg-white">
+                <div id="sizeOptionsList" class="d-grid gap-2">
+                    <!-- JS injects buttons here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        let cart = [];
+        let currentCategory = 'All'; // Track active category
+        const formatCurrency = (value) => '₱' + parseFloat(value).toFixed(2);
+
+        const searchInput = document.getElementById('productSearch');
+        const gridItems = document.querySelectorAll('.product-wrapper');
+        const emptyState = document.getElementById('emptySearchState');
+
+        // --- 1. FILTERING LOGIC (Combined Search + Category) ---
+        function filterCategory(categoryName, btnElement) {
+            // Update UI: Remove active class from all buttons, add to clicked one
+            document.querySelectorAll('.btn-cat-tab').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            currentCategory = categoryName;
+            applyFilters();
+        }
+
+        function filterProducts() {
+            // Trigger filter when typing in search bar
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const term = searchInput.value.toLowerCase().trim();
+            let visibleCount = 0;
+
+            gridItems.forEach(card => {
+                const name = card.dataset.baseName;
+                const category = card.dataset.category;
+
+                // Check both conditions
+                const matchesTerm = !term || name.includes(term);
+                const matchesCat = (currentCategory === 'All') || (category === currentCategory);
+
+                if (matchesTerm && matchesCat) {
+                    card.style.display = ''; // Show
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none'; // Hide
+                }
+            });
+
+            // Show empty state if no matches
+            emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+
+        searchInput.addEventListener('input', filterProducts);
+
+        // --- 2. CART LOGIC (With Stock Validation) ---
+        function addToCartSimple(element) {
+            // Check if disabled wrapper exists (UI prevention)
+            if(element.querySelector('[style*="cursor: not-allowed"]')) return;
+
+            const id = parseInt(element.dataset.id);
+            const name = element.dataset.name;
+            const price = parseFloat(element.dataset.price);
+            const maxStock = parseInt(element.dataset.maxStock); // Get Stock Limit
+
+            addItemToCart(id, name, price, maxStock);
+        }
+
+        function openSizeModal(element) {
+            const title = element.querySelector('.pos-title').textContent;
+            const variations = JSON.parse(element.dataset.variations);
+
+            document.getElementById('sizeModalTitle').textContent = title;
+            const container = document.getElementById('sizeOptionsList');
+            container.innerHTML = '';
+
+            variations.forEach(v => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-outline-dark py-3 d-flex justify-content-between align-items-center';
+                btn.style.cssText = 'border-color: #e0e0e0; border-radius: 10px;';
+
+                let displayLabel = (v.unit && v.unit.toLowerCase() !== 'pc') ? v.unit : 'Standard';
+
+                // Add Stock Info to Button
+                let stockLabel = "";
+                let disabledAttr = "";
+                if(v.maxStock <= 0) {
+                    stockLabel = `<span class="text-danger small">(Out of Stock)</span>`;
+                    disabledAttr = "disabled";
+                    btn.classList.add('opacity-50');
+                } else if(v.maxStock < 10) {
+                    stockLabel = `<span class="text-warning small">(${v.maxStock} left)</span>`;
+                }
+
+                btn.innerHTML = `<div><span class="fw-bold text-muted">${displayLabel}</span> ${stockLabel}</div> <span class="fw-bold text-dark">${formatCurrency(v.price)}</span>`;
+
+                if(!disabledAttr) {
+                    btn.onmouseenter = () => { btn.style.backgroundColor = 'var(--app-bg)'; btn.style.borderColor = 'var(--brand-light)'; };
+                    btn.onmouseleave = () => { btn.style.backgroundColor = 'transparent'; btn.style.borderColor = '#e0e0e0'; };
+
+                    btn.onclick = () => {
+                        addItemToCart(v.id, v.name, v.price, v.maxStock);
+                        bootstrap.Modal.getInstance(document.getElementById('sizeModal')).hide();
+                    };
+                } else {
+                    btn.disabled = true;
+                }
+
+                container.appendChild(btn);
+            });
+
+            new bootstrap.Modal(document.getElementById('sizeModal')).show();
+        }
+
+        function addItemToCart(id, name, price, maxStock) {
+            const existing = cart.find(i => i.productId === id);
+
+            // Validation: Check current cart quantity vs Max Stock
+            const currentQty = existing ? existing.quantity : 0;
+
+            if (currentQty + 1 > maxStock) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Insufficient Stock',
+                    text: `Only ${maxStock} units of ${name} available.`,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                return; // STOP here
+            }
+
+            if (existing) existing.quantity++;
+            else cart.push({ productId: id, name: name, price: price, quantity: 1, maxStock: maxStock });
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            const countBadge = document.getElementById('cart-count');
+            const totalEl = document.getElementById('cart-total-val');
+
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5" style="color: var(--brand-light);">
+                        <i class="fas fa-coffee fa-2x mb-3 opacity-25"></i>
+                        <p class="small mb-0">Start adding items to order</p>
+                    </div>`;
+                countBadge.textContent = '0';
+                totalEl.textContent = formatCurrency(0);
+                resetCalculator();
+                return;
+            }
+
+            container.innerHTML = '';
+            let total = 0;
+            let itemCount = 0;
+
+            cart.forEach((item, index) => {
+                total += item.price * item.quantity;
+                itemCount += item.quantity;
+
+                const div = document.createElement('div');
+                div.className = 'cart-item';
+                div.innerHTML = `
+                    <div class="flex-grow-1 pe-2">
+                        <p class="cart-item-title">${item.name}</p>
+                        <span class="cart-item-price">${formatCurrency(item.price)}</span>
+                    </div>
+                    <div class="cart-controls">
+                        <button class="btn-qty" onclick="updateQty(${index}, -1)"><i class="fas fa-minus fa-xs"></i></button>
+                        <span class="qty-display">${item.quantity}</span>
+                        <button class="btn-qty" onclick="updateQty(${index}, 1)"><i class="fas fa-plus fa-xs"></i></button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+
+            countBadge.textContent = itemCount;
+            totalEl.textContent = formatCurrency(total);
+            calculateChange();
+        }
+
+        function updateQty(index, change) {
+            const item = cart[index];
+
+            // Check stock limit when increasing
+            if (change > 0) {
+                if (item.quantity + 1 > item.maxStock) {
+                    Swal.fire({
+                        icon: 'warning',
+                        text: `Cannot add more. Only ${item.maxStock} available.`,
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                    return;
+                }
+            }
+
+            cart[index].quantity += change;
+            if (cart[index].quantity <= 0) cart.splice(index, 1);
+            renderCart();
+        }
+
+        function toggleCashInput() {
+            const isCash = document.getElementById('payCash').checked;
+            const calcSection = document.getElementById('cash-calculator-section');
+            const changeRow = document.getElementById('change-row');
+
+            if(isCash) {
+                calcSection.style.display = 'block';
+                changeRow.style.visibility = 'visible';
+            } else {
+                calcSection.style.display = 'none';
+                changeRow.style.visibility = 'hidden';
+            }
+            calculateChange();
+        }
+
+        function calculateChange() {
+            const totalText = document.getElementById('cart-total-val').textContent.replace('₱', '').replace(',', '');
+            const total = parseFloat(totalText) || 0;
+            const receivedInput = document.getElementById('amountReceived');
+            const received = parseFloat(receivedInput.value) || 0;
+            const changeEl = document.getElementById('change-val');
+            const btn = document.getElementById('process-sale-btn');
+            const isCash = document.getElementById('payCash').checked;
+
+            if (isCash && cart.length > 0) {
+                const change = received - total;
+                if (change >= 0) {
+                    changeEl.textContent = formatCurrency(change);
+                    changeEl.classList.remove('text-danger');
+                    changeEl.classList.add('text-success');
+                    btn.disabled = false;
+                } else {
+                    changeEl.textContent = "Insufficient";
+                    changeEl.classList.remove('text-success');
+                    changeEl.classList.add('text-danger');
+                }
+            } else {
+                changeEl.textContent = formatCurrency(0);
+                btn.disabled = false;
+            }
+        }
+
+        function resetCalculator() {
+            document.getElementById('amountReceived').value = '';
+            document.getElementById('change-val').textContent = formatCurrency(0);
+        }
+
+        async function processSale() {
+            if (cart.length === 0) {
+                Swal.fire({
+                    title: 'Cart Empty',
+                    text: 'Please add items to the order first!',
+                    icon: 'warning',
+                    confirmButtonColor: '#4F3422'
+                });
+                return;
+            }
+
+            const isCash = document.getElementById('payCash').checked;
+            const totalText = document.getElementById('cart-total-val').textContent.replace('₱', '').replace(',', '');
+            const total = parseFloat(totalText) || 0;
+            const received = parseFloat(document.getElementById('amountReceived').value) || 0;
+
+            if(isCash && received < total) {
+                Swal.fire({
+                    title: 'Insufficient Cash',
+                    text: 'The cash received is less than the total amount.',
+                    icon: 'error',
+                    confirmButtonColor: '#d33'
+                });
+                return;
+            }
+
+            const btn = document.getElementById('process-sale-btn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processing...';
+
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+
+            const saleData = {
+                PaymentMethod: paymentMethod,
+                SaleDetails: cart.map(item => ({
+                    ProductID: item.productId,
+                    Quantity: item.quantity,
+                    UnitPrice: item.price,
+                    LineTotal: item.price * item.quantity
+                }))
+            };
+
+            try {
+                const response = await fetch('/Sales/RecordSale', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify(saleData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    let changeMsg = "";
+                    if(isCash) {
+                        changeMsg = `<br>Change: <b>${formatCurrency(received - total)}</b>`;
+                    }
+
+                    Swal.fire({
+                        title: 'Order Complete!',
+                        html: `${result.message}${changeMsg}`,
+                        icon: 'success',
+                        timer: 3000,
+                        showConfirmButton: true,
+                        confirmButtonText: 'New Order',
+                        iconColor: '#4F3422',
+                        confirmButtonColor: '#4F3422'
+                    });
+                    cart = [];
+                    renderCart();
+                } else {
+                    Swal.fire({
+                        title: 'Transaction Failed',
+                        text: result.error || result.message || 'Unknown error occurred',
+                        icon: 'error',
+                        confirmButtonColor: '#d33'
+                    });
+                    console.error("Full Error Details:", result);
+                }
+            } catch (error) {
+                console.error('Network/System Error:', error);
+                Swal.fire('System Error', 'Could not connect to server. Check console for details.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        renderCart();
+    </script>
+}
